@@ -660,4 +660,49 @@ async function saveRedditAuth() {
 })();
 </script>
 
+<!-- Two-Factor Authentication -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h3>Two-Factor Authentication</h3></div>
+  <div style="padding:0 16px 16px;">
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px;">
+      Add an extra layer of security to your login with Google Authenticator.
+    </p>
+    <div id="totp-status" style="margin-bottom:12px;"></div>
+    <div id="totp-actions">
+      <a href="/2fa/setup" class="btn btn-primary btn-sm">Enable 2FA</a>
+      <button class="btn btn-outline btn-sm" onclick="disable2FA()" style="border-color:var(--red);color:var(--red);margin-left:8px;">Disable 2FA</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var statusEl = document.getElementById('totp-status');
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('totp') === 'enabled') {
+    statusEl.textContent = '2FA is enabled';
+    statusEl.style.color = 'var(--green)';
+    statusEl.style.fontWeight = '600';
+    window.history.replaceState({}, '', '/settings');
+  } else {
+    statusEl.textContent = 'Set up or manage two-factor authentication below.';
+    statusEl.style.color = 'var(--text-dim)';
+  }
+})();
+
+function disable2FA() {
+  if (!confirm('Are you sure you want to disable 2FA?')) return;
+  fetch('/2fa/disable', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('2FA has been disabled.');
+        var s = document.getElementById('totp-status');
+        s.textContent = '2FA is disabled.';
+        s.style.color = 'var(--text-dim)';
+      }
+    });
+}
+</script>
+
 <%- include('partials/footer') %>
