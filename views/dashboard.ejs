@@ -1,0 +1,597 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <div class="btn-group" style="align-items:center;">
+    <span id="schedulerBadge" class="badge badge-qualified" style="font-size:11px;padding:4px 10px;">ACTIVE</span>
+    <button class="btn btn-outline btn-sm" id="schedulerToggleBtn" onclick="toggleSchedulerPause()">Pause Scheduler</button>
+    <button class="btn btn-outline btn-sm" onclick="runScheduler()">Run Now</button>
+    <button class="btn btn-primary btn-sm" onclick="window.location='/import'">Import Leads</button>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid" id="kpiGrid">
+  <div class="kpi-card"><div class="kpi-value" id="kpi-leads">—</div><div class="kpi-label">Total Leads</div><div class="kpi-change" id="kpi-leads-today"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-contacted">—</div><div class="kpi-label">Contacted</div><div class="kpi-change" id="kpi-contact-rate"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-qualified">—</div><div class="kpi-label">Qualified</div><div class="kpi-change" id="kpi-qualify-rate"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-meetings">—</div><div class="kpi-label">Meetings Booked</div><div class="kpi-change" id="kpi-meeting-rate"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-downloads">—</div><div class="kpi-label">App Downloads</div><div class="kpi-change" id="kpi-download-rate"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-hot">—</div><div class="kpi-label">Hot Leads</div><div class="kpi-change" style="color:var(--orange)">Needs attention</div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-engaged">—</div><div class="kpi-label">Engaged</div><div class="kpi-change" id="kpi-engage-rate"></div></div>
+  <div class="kpi-card"><div class="kpi-value" id="kpi-ready">—</div><div class="kpi-label">Ready for Work</div><div class="kpi-change" id="kpi-convert-rate"></div></div>
+</div>
+
+<!-- Ad Campaigns Summary -->
+<div class="card" id="adCampaignCard" style="margin-bottom:20px;display:none;">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <h3>Ad Campaigns</h3>
+    <button class="btn btn-outline btn-sm" onclick="window.location='/ad-campaigns'">View All</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 4px;">
+    <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="ad-active">0</div><div style="font-size:11px;color:var(--text-dim);">Active</div></div>
+    <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="ad-spend-today">$0</div><div style="font-size:11px;color:var(--text-dim);">Spend Today</div></div>
+    <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="ad-leads-today">0</div><div style="font-size:11px;color:var(--text-dim);">Leads Today</div></div>
+    <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="ad-total-leads">0</div><div style="font-size:11px;color:var(--text-dim);">Total Leads</div></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Funnel -->
+  <div class="card">
+    <div class="card-header"><h3>Pipeline Funnel</h3></div>
+    <div id="funnelBars"></div>
+  </div>
+
+  <!-- Today's Activity -->
+  <div class="card">
+    <div class="card-header"><h3>Today's Activity</h3></div>
+    <div id="todayStats">
+      <div class="metric-bar"><span class="metric-bar-label">SMS Sent</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-sms" style="width:0%;background:var(--accent)"></div></div><span class="metric-bar-value" id="val-sms">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">SMS Replied</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-sms-reply" style="width:0%;background:var(--green)"></div></div><span class="metric-bar-value" id="val-sms-reply">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">Emails Sent</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-email" style="width:0%;background:var(--purple)"></div></div><span class="metric-bar-value" id="val-email">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">Emails Opened</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-email-open" style="width:0%;background:var(--green)"></div></div><span class="metric-bar-value" id="val-email-open">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">Calls Made</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-calls" style="width:0%;background:var(--orange)"></div></div><span class="metric-bar-value" id="val-calls">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">Calls Answered</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-calls-ans" style="width:0%;background:var(--green)"></div></div><span class="metric-bar-value" id="val-calls-ans">0</span></div>
+      <div class="metric-bar"><span class="metric-bar-label">Qualified</span><div class="metric-bar-track"><div class="metric-bar-fill" id="bar-qualified" style="width:0%;background:var(--green)"></div></div><span class="metric-bar-value" id="val-qualified">0</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Feed -->
+<div class="card">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <h3>Recent Activity</h3>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <select id="feedFilter" onchange="loadFeed()" style="width:auto;padding:4px 10px;font-size:12px;">
+        <option value="">All Activity</option>
+        <option value="sms">SMS</option>
+        <option value="email">Email</option>
+        <option value="call">Calls</option>
+        <option value="system">System</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadFeed()">Refresh</button>
+    </div>
+  </div>
+  <div class="activity-feed-container" id="activityFeed">
+    <div class="inbox-empty" style="padding:30px;">Loading activity feed...</div>
+  </div>
+</div>
+
+<style>
+  .activity-feed-container {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 0 4px;
+  }
+  .feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: rgba(59,130,246,0.03); }
+
+  .feed-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .feed-icon.ch-sms { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .feed-icon.ch-email { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .feed-icon.ch-call { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .feed-icon.ch-system { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+  .feed-icon.dir-inbound { box-shadow: inset 0 0 0 2px rgba(16,185,129,0.4); }
+  .feed-icon.type-error { background: rgba(239,68,68,0.12); color: #f87171; }
+  .feed-icon.type-success { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  .feed-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .feed-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+  .feed-lead-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .feed-lead-name:hover { text-decoration: underline; }
+  .feed-company {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .feed-type-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .feed-tag-sms_sent { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .feed-tag-sms_delivered { background: rgba(16,185,129,0.12); color: #34d399; }
+  .feed-tag-sms_replied { background: rgba(16,185,129,0.18); color: var(--green); }
+  .feed-tag-sms_failed { background: rgba(239,68,68,0.12); color: #f87171; }
+  .feed-tag-email_sent { background: rgba(139,92,246,0.12); color: #a78bfa; }
+  .feed-tag-email_opened { background: rgba(16,185,129,0.12); color: #34d399; }
+  .feed-tag-email_clicked { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .feed-tag-email_replied { background: rgba(16,185,129,0.18); color: var(--green); }
+  .feed-tag-call_initiated { background: rgba(249,115,22,0.12); color: #fb923c; }
+  .feed-tag-call_answered { background: rgba(16,185,129,0.12); color: #34d399; }
+  .feed-tag-call_qualified { background: rgba(16,185,129,0.18); color: var(--green); }
+  .feed-tag-score_change { background: rgba(245,158,11,0.12); color: #fbbf24; }
+  .feed-tag-opt_out { background: rgba(239,68,68,0.10); color: #f87171; }
+  .feed-tag-note_added { background: rgba(148,163,184,0.12); color: #94a3b8; }
+  .feed-tag-stage_change { background: rgba(139,92,246,0.12); color: #a78bfa; }
+  .feed-tag-meeting_booked { background: rgba(16,185,129,0.18); color: var(--green); }
+  .feed-tag-app_download { background: rgba(16,185,129,0.18); color: var(--green); }
+
+  .feed-content {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 3px;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .feed-content.is-error { color: #f87171; }
+
+  .feed-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.6;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .feed-score-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .feed-score-up { color: var(--green); }
+  .feed-score-down { color: var(--red); }
+
+  .feed-date-divider {
+    padding: 8px 8px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+</style>
+
+<script>
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/dashboard/overview');
+    const d = await res.json();
+
+    document.getElementById('kpi-leads').textContent = d.totals.leads;
+    document.getElementById('kpi-contacted').textContent = d.totals.contacted;
+    document.getElementById('kpi-qualified').textContent = d.totals.qualified;
+    document.getElementById('kpi-meetings').textContent = d.totals.meetings;
+    document.getElementById('kpi-downloads').textContent = d.totals.downloads;
+    document.getElementById('kpi-hot').textContent = d.totals.hot;
+    document.getElementById('kpi-engaged').textContent = d.totals.engaged;
+    document.getElementById('kpi-ready').textContent = d.totals.ready_for_work;
+
+    document.getElementById('kpi-leads-today').textContent = `+${d.today.leads} today`;
+    document.getElementById('kpi-leads-today').className = 'kpi-change positive';
+    document.getElementById('kpi-contact-rate').textContent = `${d.rates.contact_rate}% rate`;
+    document.getElementById('kpi-qualify-rate').textContent = `${d.rates.qualification_rate}% rate`;
+    document.getElementById('kpi-meeting-rate').textContent = `${d.rates.meeting_rate}% of qualified`;
+    document.getElementById('kpi-download-rate').textContent = `${d.rates.download_rate}% of leads`;
+    document.getElementById('kpi-engage-rate').textContent = `${d.rates.engagement_rate}% of contacted`;
+    document.getElementById('kpi-convert-rate').textContent = `${d.rates.conversion_rate}% conversion`;
+
+    // Today bars
+    const maxSms = 200, maxEmail = 500, maxCalls = 75;
+    setBars('sms', d.today.sms_sent, maxSms);
+    setBars('sms-reply', d.today.sms_replied, Math.max(d.today.sms_sent, 1));
+    setBars('email', d.today.emails_sent, maxEmail);
+    setBars('email-open', d.today.emails_opened, Math.max(d.today.emails_sent, 1));
+    setBars('calls', d.today.calls_made, maxCalls);
+    setBars('calls-ans', d.today.calls_answered, Math.max(d.today.calls_made, 1));
+    setBars('qualified', d.today.qualified, 10);
+
+    // Funnel
+    const funnelEl = document.getElementById('funnelBars');
+    const stages = d.pipeline || [];
+    const maxCount = d.totals.leads || 1;
+    const colors = { new:'#3b82f6', lead:'#6366f1', discovery:'#8b5cf6', qualifying:'#a855f7', ready_for_work:'#22c55e', bad_data:'#6b7280', do_not_call:'#ef4444', not_a_fit:'#9ca3af' };
+    funnelEl.innerHTML = stages.map(s => `
+      <div class="metric-bar">
+        <span class="metric-bar-label">${s.status.replace(/_/g,' ')}</span>
+        <div class="metric-bar-track"><div class="metric-bar-fill" style="width:${(s.count/maxCount*100).toFixed(1)}%;background:${colors[s.status]||'#6b7280'}"></div></div>
+        <span class="metric-bar-value">${s.count}</span>
+      </div>
+    `).join('');
+  } catch(e) { console.error('Dashboard load error:', e); }
+}
+
+function setBars(id, value, max) {
+  document.getElementById('val-' + id).textContent = value;
+  document.getElementById('bar-' + id).style.width = Math.min((value / max) * 100, 100) + '%';
+}
+
+function feedParseDate(str) {
+  if (!str) return new Date();
+  if (str.includes(' ') && !str.includes('T')) return new Date(str.replace(' ', 'T') + 'Z');
+  if (!str.endsWith('Z') && !str.includes('+')) return new Date(str + 'Z');
+  return new Date(str);
+}
+
+function feedTimeAgo(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  const secs = Math.floor((new Date() - date) / 1000);
+  if (secs < 60) return 'Just now';
+  if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+  if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function feedDateLabel(date) {
+  const today = new Date();
+  const d = new Date(date);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function escapeHtmlDash(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+function feedIcon(type) {
+  const map = {
+    sms_sent: '&#8593;', sms_delivered: '&#10003;', sms_replied: '&#8595;', sms_failed: '&#10007;',
+    email_sent: '&#8593;', email_opened: '&#9673;', email_clicked: '&#8599;', email_replied: '&#8595;',
+    call_initiated: '&#9742;', call_answered: '&#10003;', call_qualified: '&#9733;',
+    score_change: '&#9650;', opt_out: '&#8856;', note_added: '&#9998;',
+    stage_change: '&#8594;', meeting_booked: '&#9734;', app_download: '&#8595;'
+  };
+  return map[type] || '&#8226;';
+}
+
+function feedIconClass(a) {
+  let cls = 'ch-' + (a.channel || 'system');
+  if (a.direction === 'inbound') cls += ' dir-inbound';
+  if (a.type && a.type.includes('failed')) cls += ' type-error';
+  if (['call_qualified', 'meeting_booked', 'app_download', 'sms_replied', 'email_replied'].includes(a.type)) cls += ' type-success';
+  return cls;
+}
+
+function feedTypeLabel(type) {
+  const map = {
+    sms_sent: 'SMS Sent', sms_delivered: 'Delivered', sms_replied: 'SMS Reply', sms_failed: 'SMS Failed',
+    email_sent: 'Email Sent', email_opened: 'Opened', email_clicked: 'Clicked', email_replied: 'Email Reply',
+    call_initiated: 'Call', call_answered: 'Answered', call_qualified: 'Qualified',
+    score_change: 'Score', opt_out: 'Opt Out', note_added: 'Note',
+    stage_change: 'Stage Change', meeting_booked: 'Meeting', app_download: 'App Download'
+  };
+  return map[type] || type;
+}
+
+async function loadFeed() {
+  const filter = document.getElementById('feedFilter').value;
+  try {
+    const res = await fetch('/api/dashboard/activity-feed?limit=40');
+    let feed = await res.json();
+    const el = document.getElementById('activityFeed');
+
+    // Client-side channel filter
+    if (filter) {
+      feed = feed.filter(a => a.channel === filter);
+    }
+
+    if (!feed.length) {
+      el.innerHTML = '<div class="inbox-empty" style="padding:30px;">No activity yet. Import leads to get started.</div>';
+      return;
+    }
+
+    let html = '';
+    let lastDateLabel = '';
+
+    feed.forEach(a => {
+      const date = feedParseDate(a.created_at);
+      const dateLabel = feedDateLabel(date);
+
+      // Date divider
+      if (dateLabel !== lastDateLabel) {
+        html += `<div class="feed-date-divider">${dateLabel}</div>`;
+        lastDateLabel = dateLabel;
+      }
+
+      const isError = a.type && a.type.includes('failed');
+      const contentText = escapeHtmlDash((a.content || '').substring(0, 200));
+      const scoreHtml = (a.score_before != null && a.score_after != null && a.score_before !== a.score_after)
+        ? `<span class="feed-score-change ${a.score_after > a.score_before ? 'feed-score-up' : 'feed-score-down'}">${a.score_before} → ${a.score_after}</span>`
+        : '';
+
+      html += `<div class="feed-item">
+        <div class="feed-icon ${feedIconClass(a)}">${feedIcon(a.type)}</div>
+        <div class="feed-body">
+          <div class="feed-header">
+            <a class="feed-lead-name" href="/lead/${a.lead_id}">${escapeHtmlDash((a.first_name || '') + ' ' + (a.last_name || ''))}</a>
+            ${a.company_name ? `<span class="feed-company">${escapeHtmlDash(a.company_name)}</span>` : ''}
+            <span class="feed-type-tag feed-tag-${a.type}">${feedTypeLabel(a.type)}</span>
+            ${scoreHtml}
+          </div>
+          ${contentText ? `<div class="feed-content${isError ? ' is-error' : ''}">${contentText}</div>` : ''}
+        </div>
+        <div class="feed-time">${feedTimeAgo(date)}</div>
+      </div>`;
+    });
+
+    el.innerHTML = html;
+  } catch(e) {
+    document.getElementById('activityFeed').innerHTML = '<div class="inbox-empty" style="padding:30px;">Error loading feed</div>';
+    console.error('Feed error:', e);
+  }
+}
+
+async function runScheduler() {
+  const res = await fetch('/api/dashboard/run-scheduler', { method: 'POST' });
+  const d = await res.json();
+  alert('Scheduler run: ' + d.processed + ' processed, ' + (d.skipped||0) + ' skipped, ' + (d.errors||0) + ' errors');
+  loadDashboard();
+  loadFeed();
+}
+
+async function loadAdOverview() {
+  try {
+    const res = await fetch('/api/dashboard/ad-overview');
+    const d = await res.json();
+    if (d.total_campaigns > 0) {
+      document.getElementById('adCampaignCard').style.display = 'block';
+      document.getElementById('ad-active').textContent = d.active_campaigns || 0;
+      document.getElementById('ad-spend-today').textContent = '$' + (d.today_spend || 0).toFixed(2);
+      document.getElementById('ad-leads-today').textContent = d.today_leads || 0;
+      document.getElementById('ad-total-leads').textContent = d.total_leads || 0;
+    }
+  } catch(e) { /* no ad campaigns yet */ }
+}
+
+async function loadSchedulerStatus() {
+  try {
+    const res = await fetch('/api/dashboard/settings');
+    const settings = await res.json();
+    const paused = settings.find(s => s.key === 'system_paused');
+    const isPaused = paused && paused.value === '1';
+    const badge = document.getElementById('schedulerBadge');
+    const btn = document.getElementById('schedulerToggleBtn');
+    badge.textContent = isPaused ? 'PAUSED' : 'ACTIVE';
+    badge.className = 'badge ' + (isPaused ? 'badge-hot' : 'badge-qualified');
+    btn.textContent = isPaused ? 'Resume Scheduler' : 'Pause Scheduler';
+    btn.className = isPaused ? 'btn btn-success btn-sm' : 'btn btn-outline btn-sm';
+  } catch(e) { console.error('Scheduler status error:', e); }
+}
+
+async function toggleSchedulerPause() {
+  const res = await fetch('/api/dashboard/settings');
+  const settings = await res.json();
+  const paused = settings.find(s => s.key === 'system_paused');
+  const isPaused = paused && paused.value === '1';
+  if (isPaused) {
+    await fetch('/api/dashboard/resume-system', { method: 'POST' });
+  } else {
+    if (!confirm('PAUSE all outreach? No SMS, emails, or calls will be sent until you resume.')) return;
+    await fetch('/api/dashboard/pause-system', { method: 'POST' });
+  }
+  loadSchedulerStatus();
+}
+
+loadDashboard();
+loadFeed();
+loadAdOverview();
+loadSchedulerStatus();
+setInterval(loadDashboard, 30000);
+setInterval(loadFeed, 15000);
+setInterval(loadSchedulerStatus, 30000);
+</script>
+
+<!-- ============================================ -->
+<!-- ANALYTICS (merged from standalone page)      -->
+<!-- ============================================ -->
+<div style="margin-top:24px;border-top:2px solid var(--border);padding-top:24px;">
+  <div class="page-header" style="margin-bottom:16px;">
+    <h2 style="font-size:20px;">Analytics</h2>
+    <select id="periodSelect" onchange="loadAnalytics()" style="width:auto;">
+      <option value="7">Last 7 Days</option>
+      <option value="14">Last 14 Days</option>
+      <option value="30">Last 30 Days</option>
+    </select>
+  </div>
+
+  <!-- Channel Performance -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header"><h3>SMS</h3></div>
+      <div id="smsStats" class="loading">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Email</h3></div>
+      <div id="emailStats" class="loading">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>AI Calls</h3></div>
+      <div id="callStats" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- A/B Test Results -->
+  <div class="card">
+    <div class="card-header"><h3>A/B Test Results</h3></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Template</th><th>Version</th><th>Sends</th><th>Replies</th><th>Reply Rate</th><th>Opens</th><th>Open Rate</th><th>Clicks</th></tr>
+        </thead>
+        <tbody id="abTable">
+          <tr><td colspan="8" class="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Trend -->
+  <div class="card">
+    <div class="card-header"><h3>Daily Activity Trend</h3></div>
+    <div id="dailyTrend" style="min-height:200px;"></div>
+  </div>
+</div>
+
+<script>
+async function loadAnalytics() {
+  const days = document.getElementById('periodSelect').value;
+  try {
+    const res = await fetch(`/api/dashboard/analytics?days=${days}`);
+    const d = await res.json();
+
+    document.getElementById('smsStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Sent</td><td style="text-align:right;font-weight:600">${d.sms.sent}</td></tr>
+        <tr><td style="color:var(--text-dim)">Delivered</td><td style="text-align:right">${d.sms.delivered}</td></tr>
+        <tr><td style="color:var(--text-dim)">Replied</td><td style="text-align:right;color:var(--green)">${d.sms.replied}</td></tr>
+        <tr><td style="color:var(--text-dim)">Opt-Outs</td><td style="text-align:right;color:var(--red)">${d.sms.opted_out}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Reply Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.sms.reply_rate}%</td></tr>
+      </table>`;
+
+    document.getElementById('emailStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Sent</td><td style="text-align:right;font-weight:600">${d.email.sent}</td></tr>
+        <tr><td style="color:var(--text-dim)">Opened</td><td style="text-align:right">${d.email.opened}</td></tr>
+        <tr><td style="color:var(--text-dim)">Clicked</td><td style="text-align:right;color:var(--green)">${d.email.clicked}</td></tr>
+        <tr><td style="color:var(--text-dim)">Bounced</td><td style="text-align:right;color:var(--red)">${d.email.bounced}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Open Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.email.open_rate}%</td></tr>
+        <tr><td style="color:var(--text-dim)">Click Rate</td><td style="text-align:right;font-weight:700;color:var(--green)">${d.email.click_rate}%</td></tr>
+      </table>`;
+
+    document.getElementById('callStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Made</td><td style="text-align:right;font-weight:600">${d.calls.made}</td></tr>
+        <tr><td style="color:var(--text-dim)">Answered</td><td style="text-align:right">${d.calls.answered}</td></tr>
+        <tr><td style="color:var(--text-dim)">Qualified</td><td style="text-align:right;color:var(--green)">${d.calls.qualified}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Answer Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.calls.answer_rate}%</td></tr>
+        <tr><td style="color:var(--text-dim)">Qualify Rate</td><td style="text-align:right;font-weight:700;color:var(--green)">${d.calls.qualify_rate}%</td></tr>
+      </table>`;
+
+    const abBody = document.getElementById('abTable');
+    if (!d.abTests.length) {
+      abBody.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim)">No A/B test data yet. Send more messages!</td></tr>';
+    } else {
+      abBody.innerHTML = d.abTests.map(t => `
+        <tr>
+          <td>${t.name}</td>
+          <td><span class="badge badge-${t.version==='A'?'lead':'discovery'}">${t.version}</span></td>
+          <td>${t.send_count}</td>
+          <td>${t.reply_count}</td>
+          <td style="font-weight:600;color:${parseFloat(t.reply_rate)>5?'var(--green)':'var(--text)'}">${t.reply_rate}%</td>
+          <td>${t.open_count}</td>
+          <td>${t.open_rate}%</td>
+          <td>${t.click_count}</td>
+        </tr>
+      `).join('');
+    }
+
+    renderDailyTrend(d.dailyTrend, days);
+  } catch(e) { console.error('Analytics error:', e); }
+}
+
+function renderDailyTrend(data, days) {
+  const el = document.getElementById('dailyTrend');
+  if (!data.length) { el.innerHTML = '<div class="empty">No data for this period.</div>'; return; }
+
+  const byDate = {};
+  data.forEach(d => {
+    if (!byDate[d.date]) byDate[d.date] = {};
+    byDate[d.date][d.type] = d.count;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const types = ['sms_sent','email_sent','call_initiated','sms_replied','call_qualified'];
+  const colors = {sms_sent:'#3b82f6',email_sent:'#a855f7',call_initiated:'#f97316',sms_replied:'#22c55e',call_qualified:'#16a34a'};
+  const labels = {sms_sent:'SMS Sent',email_sent:'Email Sent',call_initiated:'Calls',sms_replied:'Replies',call_qualified:'Qualified'};
+
+  let html = '<div style="overflow-x:auto;"><table style="font-size:12px;"><thead><tr><th>Date</th>';
+  types.forEach(t => html += `<th style="color:${colors[t]}">${labels[t]}</th>`);
+  html += '</tr></thead><tbody>';
+
+  dates.forEach(date => {
+    html += `<tr><td style="color:var(--text-dim)">${date}</td>`;
+    types.forEach(t => {
+      const val = byDate[date][t] || 0;
+      html += `<td>${val > 0 ? `<span style="color:${colors[t]};font-weight:600">${val}</span>` : '<span style="color:var(--border)">0</span>'}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+loadAnalytics();
+</script>
+
+<%- include('partials/footer') %>

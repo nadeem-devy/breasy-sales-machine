@@ -1,0 +1,260 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Track External Campaign</h1>
+  <button class="btn btn-outline btn-sm" onclick="window.location='/ad-campaigns'">Back to Campaigns</button>
+</div>
+
+<!-- How It Works -->
+<div class="card" style="max-width:800px;margin-bottom:20px;border-left:4px solid var(--accent);">
+  <h3 style="margin-bottom:12px;">How It Works</h3>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center;">
+    <div style="padding:12px;">
+      <div style="font-size:28px;margin-bottom:6px;">1</div>
+      <div style="font-weight:700;margin-bottom:4px;">Paste Your Link</div>
+      <div style="font-size:12px;color:var(--text-dim);">Copy the campaign URL from Facebook, Google, LinkedIn, or Reddit and paste it below</div>
+    </div>
+    <div style="padding:12px;">
+      <div style="font-size:28px;margin-bottom:6px;">2</div>
+      <div style="font-weight:700;margin-bottom:4px;">Get a Tracking URL</div>
+      <div style="font-size:12px;color:var(--text-dim);">We generate a special link. Use it as your ad destination instead of your landing page</div>
+    </div>
+    <div style="padding:12px;">
+      <div style="font-size:28px;margin-bottom:6px;">3</div>
+      <div style="font-weight:700;margin-bottom:4px;">See Every Click</div>
+      <div style="font-size:12px;color:var(--text-dim);">Every visitor is logged (device, location, time) then instantly redirected to your landing page</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Form -->
+<div class="card" style="max-width:800px;">
+
+  <!-- Step 1: Paste Link -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span style="background:var(--accent);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">1</span>
+    <h3 style="margin:0;">Paste your campaign link</h3>
+  </div>
+  <div class="form-group">
+    <input type="text" id="f-url" placeholder="Paste your Facebook, Google, LinkedIn or Reddit campaign URL here..." style="font-size:15px;padding:14px;">
+  </div>
+
+  <div id="urlPreview" style="display:none;padding:12px;border-radius:8px;background:var(--bg-hover);margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span id="detectedPlatformBadge" class="badge" style="font-size:13px;color:#fff;padding:4px 10px;border-radius:4px;"></span>
+      <span id="detectedCampaignId" style="color:var(--text-dim);font-size:13px;"></span>
+      <span id="authStatus" style="font-size:12px;margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label style="font-size:12px;color:var(--text-dim);">Platform not detected? Select manually:</label>
+    <select id="f-platform">
+      <option value="">-- Auto-detect from URL --</option>
+      <option value="facebook">Facebook</option>
+      <option value="instagram">Instagram</option>
+      <option value="google">Google Ads</option>
+      <option value="linkedin">LinkedIn</option>
+      <option value="reddit">Reddit</option>
+    </select>
+  </div>
+
+  <hr style="border-color:var(--border);margin:24px 0;">
+
+  <!-- Step 2: Name It -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span style="background:var(--accent);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">2</span>
+    <h3 style="margin:0;">Give it a name</h3>
+  </div>
+  <div class="form-group">
+    <input type="text" id="f-name" placeholder="e.g. Spring Landscapers - Dallas FB" style="font-size:15px;padding:12px;">
+    <small style="color:var(--text-dim);">A friendly name so you can find this campaign later</small>
+  </div>
+
+  <hr style="border-color:var(--border);margin:24px 0;">
+
+  <!-- Step 3: Landing Page -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span style="background:var(--accent);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">3</span>
+    <h3 style="margin:0;">Where should visitors go?</h3>
+  </div>
+  <div class="form-group">
+    <input type="text" id="f-landing" placeholder="https://yoursite.com/landing-page" style="font-size:15px;padding:12px;">
+    <small style="color:var(--text-dim);">Your landing page URL. Visitors click the tracking link and land here.</small>
+  </div>
+
+  <div id="trackingLinkResult" style="display:none;padding:16px;border-radius:8px;background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.2);margin-top:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;">Your Tracking Link is Ready!</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <code id="generatedTrackingUrl" style="flex:1;background:var(--bg);padding:10px 14px;border-radius:6px;font-size:13px;word-break:break-all;color:var(--text);"></code>
+      <button class="btn btn-sm btn-primary" onclick="copyTrackingUrl()">Copy</button>
+    </div>
+    <div style="margin-top:12px;padding:10px;border-radius:6px;background:var(--bg-hover);font-size:12px;color:var(--text-dim);line-height:1.6;">
+      <strong style="color:var(--text);">What to do next:</strong><br>
+      1. Copy this tracking link<br>
+      2. Go to your ad platform (Facebook, Google, etc.)<br>
+      3. Edit your ad and replace the destination URL with this tracking link<br>
+      4. Every click will now be tracked here and visitors still land on your page
+    </div>
+  </div>
+
+  <hr style="border-color:var(--border);margin:24px 0;">
+
+  <!-- Optional Details (collapsed) -->
+  <details style="margin-bottom:20px;">
+    <summary style="cursor:pointer;font-size:13px;color:var(--text-dim);font-weight:600;">Optional: Budget & Dates</summary>
+    <div style="margin-top:12px;">
+      <div class="form-group">
+        <label>Objective</label>
+        <select id="f-objective">
+          <option value="lead_generation">Lead Generation</option>
+          <option value="traffic">Traffic</option>
+          <option value="awareness">Awareness</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Daily Budget ($)</label><input type="number" id="f-daily-budget" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Total Budget ($)</label><input type="number" id="f-total-budget" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Start Date</label><input type="date" id="f-start-date"></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="f-end-date"></div>
+      </div>
+    </div>
+  </details>
+
+  <!-- Metrics Mode Info -->
+  <div id="metricsMode" style="padding:12px;border-radius:8px;background:var(--bg-hover);margin-bottom:20px;font-size:13px;">
+    <span id="metricsModeText" style="color:var(--text-dim);">Paste a campaign URL above to see if auto-sync is available for your platform.</span>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn btn-primary" id="submitBtn" onclick="submitCampaign()" style="width:100%;padding:14px;font-size:15px;">Start Tracking</button>
+</div>
+
+<script>
+var parsedData = null;
+
+document.getElementById('f-url').addEventListener('input', debounce(parseUrl, 500));
+document.getElementById('f-url').addEventListener('paste', function() {
+  setTimeout(parseUrl, 100);
+});
+
+function debounce(fn, ms) {
+  var timer;
+  return function() { clearTimeout(timer); timer = setTimeout(fn, ms); };
+}
+
+async function parseUrl() {
+  var url = document.getElementById('f-url').value.trim();
+  var preview = document.getElementById('urlPreview');
+  if (!url) { preview.style.display = 'none'; parsedData = null; return; }
+
+  try {
+    var resp = await fetch('/api/ad-campaigns/parse-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    });
+    if (!resp.ok) { preview.style.display = 'none'; return; }
+    parsedData = await resp.json();
+
+    preview.style.display = 'block';
+    var colors = { facebook: '#1877f2', instagram: '#e1306c', google: '#4285f4', linkedin: '#0a66c2', reddit: '#ff4500' };
+    var badge = document.getElementById('detectedPlatformBadge');
+    badge.textContent = (parsedData.platform || 'Unknown').toUpperCase();
+    badge.style.background = colors[parsedData.platform] || 'var(--text-dim)';
+
+    document.getElementById('detectedCampaignId').textContent = parsedData.campaignId ? 'Campaign ID: ' + parsedData.campaignId : '';
+
+    var authEl = document.getElementById('authStatus');
+    var modeEl = document.getElementById('metricsModeText');
+    if (parsedData.auth_connected) {
+      authEl.textContent = '\u2713 API Connected \u2014 metrics will auto-sync';
+      authEl.style.color = 'var(--green)';
+      modeEl.textContent = '\u26A1 Auto-sync enabled \u2014 Impressions, clicks, spend and leads will update automatically every 5 minutes.';
+      modeEl.style.color = 'var(--green)';
+    } else {
+      authEl.textContent = '\u26A0 API not connected';
+      authEl.style.color = 'var(--yellow)';
+      modeEl.textContent = '\u270D Manual mode \u2014 You\'ll enter metrics yourself. To enable auto-sync, connect your ad account in Settings first.';
+      modeEl.style.color = 'var(--yellow)';
+    }
+
+    if (parsedData.platform) {
+      document.getElementById('f-platform').value = parsedData.platform;
+    }
+  } catch (e) {
+    preview.style.display = 'none';
+  }
+}
+
+async function submitCampaign() {
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  var payload = {
+    url_or_id: document.getElementById('f-url').value.trim(),
+    platform: document.getElementById('f-platform').value || undefined,
+    name: document.getElementById('f-name').value.trim(),
+    objective: document.getElementById('f-objective').value,
+    landing_page_url: document.getElementById('f-landing').value.trim(),
+    daily_budget: document.getElementById('f-daily-budget').value,
+    total_budget: document.getElementById('f-total-budget').value,
+    start_date: document.getElementById('f-start-date').value,
+    end_date: document.getElementById('f-end-date').value,
+  };
+
+  if (!payload.name) {
+    alert('Please enter a campaign name.');
+    btn.disabled = false;
+    btn.textContent = 'Start Tracking';
+    return;
+  }
+
+  try {
+    var resp = await fetch('/api/ad-campaigns/track-external', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await resp.json();
+
+    if (!resp.ok) {
+      alert(data.error || 'Failed to create campaign');
+      btn.disabled = false;
+      btn.textContent = 'Start Tracking';
+      return;
+    }
+
+    if (data.tracking_url) {
+      document.getElementById('trackingLinkResult').style.display = 'block';
+      document.getElementById('generatedTrackingUrl').textContent = data.tracking_url;
+      btn.textContent = 'Done! Redirecting...';
+      btn.style.background = 'var(--green)';
+    }
+
+    setTimeout(function() {
+      window.location = '/ad-campaigns/' + data.id;
+    }, 3000);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Start Tracking';
+  }
+}
+
+function copyTrackingUrl() {
+  var url = document.getElementById('generatedTrackingUrl').textContent;
+  navigator.clipboard.writeText(url).then(function() {
+    var btns = document.querySelectorAll('#trackingLinkResult .btn');
+    if (btns.length) {
+      btns[0].textContent = 'Copied!';
+      setTimeout(function() { btns[0].textContent = 'Copy'; }, 2000);
+    }
+  });
+}
+</script>
+
+<%- include('partials/footer') %>

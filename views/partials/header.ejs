@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breasy Sales Machine</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply saved theme immediately to prevent flash
+    (function() {
+      var t = localStorage.getItem('breasy-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+  <!-- Global Top Nav -->
+  <nav class="top-nav">
+    <a href="/playbook" class="top-nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'playbook' ? ' active' : '' %>">
+      &#128214; Playbook
+    </a>
+  </nav>
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+        <div class="logo-icon">
+          <svg viewBox="0 0 32 32" fill="none" width="36" height="36">
+            <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+            <path d="M8 8h7c2.8 0 4.8 1.5 4.8 3.8 0 1.6-1 2.8-2.4 3.3v.2c1.8.5 2.9 1.8 2.9 3.7 0 2.7-2.2 4.2-5.3 4.2H8V8zm3.4 6h2.8c1.5 0 2.3-.7 2.3-1.8 0-1.2-.9-1.9-2.4-1.9h-2.7v3.7zm0 6.7h3.2c1.6 0 2.5-.8 2.5-2.1 0-1.3-1-2.1-2.7-2.1h-3V20.7z" fill="#fff"/>
+            <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text">Breasy</div>
+          <div class="logo-subtitle">Sales Machine</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="nav-links">
+      <!-- Dashboard (top-level, no section) -->
+      <a href="/" class="nav-link" data-page="dashboard">Dashboard</a>
+
+      <!-- Lead Management -->
+      <div class="nav-section" data-section="leads">
+        <div class="nav-section-header" onclick="toggleNavSection('leads')">
+          <span class="nav-section-arrow" id="arrow-leads">&#9662;</span>
+          <span>&#128101; Lead Management</span>
+        </div>
+        <div class="nav-section-items" id="section-leads">
+          <a href="/leads" class="nav-link" data-page="leads">Leads</a>
+          <a href="/companies" class="nav-link" data-page="companies">Companies</a>
+          <a href="/import" class="nav-link" data-page="import">Import</a>
+          <a href="/scrape" class="nav-link" data-page="scrape">Scrape Leads</a>
+        </div>
+      </div>
+
+      <!-- Outreach -->
+      <div class="nav-section" data-section="outreach">
+        <div class="nav-section-header" onclick="toggleNavSection('outreach')">
+          <span class="nav-section-arrow" id="arrow-outreach">&#9662;</span>
+          <span>&#128227; Outreach</span>
+        </div>
+        <div class="nav-section-items" id="section-outreach">
+          <a href="/sms-inbox" class="nav-link" data-page="sms-inbox">SMS Inbox</a>
+          <a href="/email-inbox" class="nav-link" data-page="email-inbox">Email</a>
+          <a href="/call-log" class="nav-link" data-page="call-log">Call Log</a>
+          <a href="/app-support" class="nav-link" data-page="app-support">App Support</a>
+        </div>
+      </div>
+
+      <!-- Marketing -->
+      <div class="nav-section" data-section="marketing">
+        <div class="nav-section-header" onclick="toggleNavSection('marketing')">
+          <span class="nav-section-arrow" id="arrow-marketing">&#9662;</span>
+          <span>&#128200; Marketing</span>
+        </div>
+        <div class="nav-section-items" id="section-marketing">
+          <a href="/ad-campaigns" class="nav-link" data-page="ad-campaigns">Ad Campaigns</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="/settings" class="nav-link nav-footer-link" data-page="settings">&#9881; Settings</a>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span class="theme-toggle-icon" id="themeIcon">&#9790;</span>
+        <span id="themeLabel">Light Mode</span>
+      </button>
+      <button id="pauseBtn" class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="toggleSystem()">Pause System</button>
+    </div>
+  </nav>
+
+  <script>
+  // Nav section collapse/expand with localStorage persistence
+  (function() {
+    var STORAGE_KEY = 'breasy-nav-collapsed';
+
+    function getCollapsed() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch(e) { return []; }
+    }
+
+    function saveCollapsed(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    // Apply saved collapsed state on load
+    var collapsed = getCollapsed();
+    collapsed.forEach(function(id) {
+      var items = document.getElementById('section-' + id);
+      var arrow = document.getElementById('arrow-' + id);
+      if (items) items.classList.add('collapsed');
+      if (arrow) arrow.classList.add('collapsed');
+    });
+
+    // Make toggle function global
+    window.toggleNavSection = function(id) {
+      var items = document.getElementById('section-' + id);
+      var arrow = document.getElementById('arrow-' + id);
+      if (!items) return;
+
+      var collapsed = getCollapsed();
+      var idx = collapsed.indexOf(id);
+
+      if (items.classList.contains('collapsed')) {
+        items.classList.remove('collapsed');
+        arrow.classList.remove('collapsed');
+        if (idx > -1) collapsed.splice(idx, 1);
+      } else {
+        items.classList.add('collapsed');
+        arrow.classList.add('collapsed');
+        if (idx === -1) collapsed.push(id);
+      }
+
+      saveCollapsed(collapsed);
+    };
+
+    // Auto-expand section containing active page
+    var path = window.location.pathname;
+    var activeLink = document.querySelector('.nav-link[data-page]');
+    document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
+      if (link.getAttribute('href') === path ||
+          (path.startsWith('/lead/') && link.getAttribute('data-page') === 'leads') ||
+          (path.startsWith('/company/') && link.getAttribute('data-page') === 'companies') ||
+          (path.startsWith('/ad-campaigns') && link.getAttribute('data-page') === 'ad-campaigns')) {
+        link.classList.add('active');
+        // Expand parent section if collapsed
+        var section = link.closest('.nav-section');
+        if (section) {
+          var sectionId = section.getAttribute('data-section');
+          var items = document.getElementById('section-' + sectionId);
+          var arrow = document.getElementById('arrow-' + sectionId);
+          if (items && items.classList.contains('collapsed')) {
+            items.classList.remove('collapsed');
+            if (arrow) arrow.classList.remove('collapsed');
+            // Update storage
+            var c = getCollapsed();
+            var i = c.indexOf(sectionId);
+            if (i > -1) { c.splice(i, 1); saveCollapsed(c); }
+          }
+        }
+      }
+    });
+  })();
+  </script>
+
+  <main class="content">

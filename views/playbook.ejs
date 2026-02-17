@@ -1,0 +1,324 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Qualification Playbook</h1>
+  <span style="color:var(--text-dim);font-size:13px;">Read this before every call</span>
+</div>
+
+<style>
+  .pb-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .pb-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pb-section-title .pb-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .pb-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .pb-checklist li {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .pb-checklist li:last-child { margin-bottom: 0; }
+  .pb-check {
+    color: var(--green);
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pb-x {
+    color: var(--red);
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pb-label { font-weight: 600; }
+  .pb-hint { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+
+  .pb-verdict {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .pb-verdict-card {
+    flex: 1;
+    min-width: 260px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+  }
+  .pb-verdict-card.pb-pass {
+    border-color: var(--green);
+    background: rgba(22,163,74,0.06);
+  }
+  .pb-verdict-card.pb-fail {
+    border-color: var(--red);
+    background: rgba(220,38,38,0.06);
+  }
+  .pb-verdict-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .pb-verdict-card.pb-pass .pb-verdict-title { color: var(--green); }
+  .pb-verdict-card.pb-fail .pb-verdict-title { color: var(--red); }
+
+  .pb-callout {
+    padding: 16px 20px;
+    border-radius: 10px;
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.2);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 10px;
+  }
+
+  .pb-script-block {
+    padding: 16px 20px;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .pb-script-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .pb-script-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    font-style: italic;
+  }
+</style>
+
+<!-- Must-Have Checklist -->
+<div class="pb-section">
+  <div class="pb-section-title">
+    <span class="pb-num">1</span>
+    Qualification Criteria
+  </div>
+  <p style="color:var(--text-dim);font-size:13px;margin-bottom:14px;">Confirm ALL of these before approving a lead for work:</p>
+  <ul class="pb-checklist">
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">18+ years old</div>
+        <div class="pb-hint">Legal requirement for contract work</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">1+ year of experience in their trade</div>
+        <div class="pb-hint">Ask: "How long have you been doing this professionally?"</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Registered business</div>
+        <div class="pb-hint">LLC, sole prop, or corporation &mdash; they need a legal entity</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Insurance or willing to sign waiver</div>
+        <div class="pb-hint">General liability preferred; waiver is acceptable for getting started</div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Preferences to Collect -->
+<div class="pb-section">
+  <div class="pb-section-title">
+    <span class="pb-num">2</span>
+    Preferences to Collect
+  </div>
+  <p style="color:var(--text-dim);font-size:13px;margin-bottom:14px;">Gather these so we can match them to the right jobs:</p>
+  <ul class="pb-checklist">
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Services offered</div>
+        <div class="pb-hint">What specific services do they perform? (mowing, hedging, cleanups, irrigation, etc.)</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Service geography</div>
+        <div class="pb-hint">What zip codes / cities / radius are they willing to travel?</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Capacity</div>
+        <div class="pb-hint">How many jobs per week can they handle? Crew size?</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Availability</div>
+        <div class="pb-hint">Which days/times work? Any blackout dates coming up?</div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Set Expectations -->
+<div class="pb-section">
+  <div class="pb-section-title">
+    <span class="pb-num">3</span>
+    Expectations to Set
+  </div>
+  <p style="color:var(--text-dim);font-size:13px;margin-bottom:14px;">Make sure they understand how Breasy works:</p>
+  <ul class="pb-checklist">
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Quote timing</div>
+        <div class="pb-hint">They'll receive job requests and need to respond with quotes within 24 hours</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">90-day Market Manager support</div>
+        <div class="pb-hint">They get a dedicated Market Manager for their first 90 days to help them succeed</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Scorecard visibility</div>
+        <div class="pb-hint">Their performance (response time, completion rate, reviews) is tracked and visible</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">No direct contact with homeowners before job assignment</div>
+        <div class="pb-hint">All communication goes through the Breasy platform until a job is assigned</div>
+      </div>
+    </li>
+    <li>
+      <span class="pb-check">&#10003;</span>
+      <div>
+        <div class="pb-label">Payment terms</div>
+        <div class="pb-hint">Explain how and when they get paid (net terms, payment method, etc.)</div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Decision -->
+<div class="pb-section">
+  <div class="pb-section-title">
+    <span class="pb-num">&#10004;</span>
+    The Decision
+  </div>
+  <div class="pb-verdict">
+    <div class="pb-verdict-card pb-pass">
+      <div class="pb-verdict-title">All 3 sections confirmed?</div>
+      <p style="font-size:14px;line-height:1.5;">Move lead to <strong>Onboarded</strong> and assign to Market Manager for first job.</p>
+    </div>
+    <div class="pb-verdict-card pb-fail">
+      <div class="pb-verdict-title">Any section incomplete?</div>
+      <p style="font-size:14px;line-height:1.5;">Schedule a follow-up call. Do <strong>not</strong> approve until all criteria are met.</p>
+    </div>
+  </div>
+
+  <div class="pb-callout" style="margin-top:20px;">
+    <strong>Remember:</strong> This call is about confirmation and clarity, not selling. They already said yes in discovery. Now you're making sure they're ready to deliver.
+  </div>
+</div>
+
+<!-- Quick Script Examples -->
+<div class="pb-section">
+  <div class="pb-section-title">
+    <span class="pb-num">&#9998;</span>
+    Sample Talk Tracks
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Opening</div>
+    <div class="pb-script-text">"Hey [Name], this is [Your Name] from Breasy. Thanks for your interest &mdash; I just have a few quick questions to make sure we can get you set up and sending you jobs right away."</div>
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Qualification Check</div>
+    <div class="pb-script-text">"How long have you been in the landscaping business? And do you have your business registered &mdash; like an LLC or sole proprietorship?"</div>
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Capacity Check</div>
+    <div class="pb-script-text">"How many jobs a week can you comfortably handle right now? And what areas do you typically cover?"</div>
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Setting Expectations</div>
+    <div class="pb-script-text">"Great. So here's how it works &mdash; you'll get job requests through the app, you quote within 24 hours, and for your first 90 days you'll have a dedicated Market Manager helping you get rolling."</div>
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Closing (Qualified)</div>
+    <div class="pb-script-text">"Everything checks out. I'm going to get you set up in our system and your Market Manager will reach out within 24 hours to walk you through your first job. Welcome aboard!"</div>
+  </div>
+
+  <div class="pb-script-block">
+    <div class="pb-script-label">Closing (Needs Follow-Up)</div>
+    <div class="pb-script-text">"No worries &mdash; let's get [missing item] sorted out and I'll give you a call back on [day]. Sound good?"</div>
+  </div>
+</div>
+
+<script>
+  // Highlight active nav
+  document.querySelectorAll('.nav-link').forEach(l => {
+    if (l.dataset.page === 'playbook') l.classList.add('active');
+  });
+</script>
+
+<%- include('partials/footer') %>

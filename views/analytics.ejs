@@ -1,0 +1,150 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Analytics</h1>
+  <select id="periodSelect" onchange="loadAnalytics()" style="width:auto;">
+    <option value="7">Last 7 Days</option>
+    <option value="14">Last 14 Days</option>
+    <option value="30">Last 30 Days</option>
+  </select>
+</div>
+
+<!-- Channel Performance -->
+<div class="grid-3">
+  <div class="card">
+    <div class="card-header"><h3>SMS</h3></div>
+    <div id="smsStats" class="loading">Loading...</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Email</h3></div>
+    <div id="emailStats" class="loading">Loading...</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>AI Calls</h3></div>
+    <div id="callStats" class="loading">Loading...</div>
+  </div>
+</div>
+
+<!-- A/B Test Results -->
+<div class="card">
+  <div class="card-header"><h3>A/B Test Results</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Template</th><th>Version</th><th>Sends</th><th>Replies</th><th>Reply Rate</th><th>Opens</th><th>Open Rate</th><th>Clicks</th></tr>
+      </thead>
+      <tbody id="abTable">
+        <tr><td colspan="8" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Daily Trend -->
+<div class="card">
+  <div class="card-header"><h3>Daily Activity Trend</h3></div>
+  <div id="dailyTrend" style="min-height:200px;"></div>
+</div>
+
+<script>
+async function loadAnalytics() {
+  const days = document.getElementById('periodSelect').value;
+  try {
+    const res = await fetch(`/api/dashboard/analytics?days=${days}`);
+    const d = await res.json();
+
+    // SMS
+    document.getElementById('smsStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Sent</td><td style="text-align:right;font-weight:600">${d.sms.sent}</td></tr>
+        <tr><td style="color:var(--text-dim)">Delivered</td><td style="text-align:right">${d.sms.delivered}</td></tr>
+        <tr><td style="color:var(--text-dim)">Replied</td><td style="text-align:right;color:var(--green)">${d.sms.replied}</td></tr>
+        <tr><td style="color:var(--text-dim)">Opt-Outs</td><td style="text-align:right;color:var(--red)">${d.sms.opted_out}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Reply Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.sms.reply_rate}%</td></tr>
+      </table>`;
+
+    // Email
+    document.getElementById('emailStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Sent</td><td style="text-align:right;font-weight:600">${d.email.sent}</td></tr>
+        <tr><td style="color:var(--text-dim)">Opened</td><td style="text-align:right">${d.email.opened}</td></tr>
+        <tr><td style="color:var(--text-dim)">Clicked</td><td style="text-align:right;color:var(--green)">${d.email.clicked}</td></tr>
+        <tr><td style="color:var(--text-dim)">Bounced</td><td style="text-align:right;color:var(--red)">${d.email.bounced}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Open Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.email.open_rate}%</td></tr>
+        <tr><td style="color:var(--text-dim)">Click Rate</td><td style="text-align:right;font-weight:700;color:var(--green)">${d.email.click_rate}%</td></tr>
+      </table>`;
+
+    // Calls
+    document.getElementById('callStats').innerHTML = `
+      <table style="width:100%;">
+        <tr><td style="color:var(--text-dim)">Made</td><td style="text-align:right;font-weight:600">${d.calls.made}</td></tr>
+        <tr><td style="color:var(--text-dim)">Answered</td><td style="text-align:right">${d.calls.answered}</td></tr>
+        <tr><td style="color:var(--text-dim)">Qualified</td><td style="text-align:right;color:var(--green)">${d.calls.qualified}</td></tr>
+        <tr><td colspan="2"><hr style="border-color:var(--border);margin:8px 0;"></td></tr>
+        <tr><td style="color:var(--text-dim)">Answer Rate</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--accent)">${d.calls.answer_rate}%</td></tr>
+        <tr><td style="color:var(--text-dim)">Qualify Rate</td><td style="text-align:right;font-weight:700;color:var(--green)">${d.calls.qualify_rate}%</td></tr>
+      </table>`;
+
+    // A/B Tests
+    const abBody = document.getElementById('abTable');
+    if (!d.abTests.length) {
+      abBody.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim)">No A/B test data yet. Send more messages!</td></tr>';
+    } else {
+      abBody.innerHTML = d.abTests.map(t => `
+        <tr>
+          <td>${t.name}</td>
+          <td><span class="badge badge-${t.version==='A'?'lead':'discovery'}">${t.version}</span></td>
+          <td>${t.send_count}</td>
+          <td>${t.reply_count}</td>
+          <td style="font-weight:600;color:${parseFloat(t.reply_rate)>5?'var(--green)':'var(--text)'}">${t.reply_rate}%</td>
+          <td>${t.open_count}</td>
+          <td>${t.open_rate}%</td>
+          <td>${t.click_count}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Daily trend (simple text-based chart)
+    renderDailyTrend(d.dailyTrend, days);
+  } catch(e) { console.error('Analytics error:', e); }
+}
+
+function renderDailyTrend(data, days) {
+  const el = document.getElementById('dailyTrend');
+  if (!data.length) { el.innerHTML = '<div class="empty">No data for this period.</div>'; return; }
+
+  // Group by date
+  const byDate = {};
+  data.forEach(d => {
+    if (!byDate[d.date]) byDate[d.date] = {};
+    byDate[d.date][d.type] = d.count;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const types = ['sms_sent','email_sent','call_initiated','sms_replied','call_qualified'];
+  const colors = {sms_sent:'#3b82f6',email_sent:'#a855f7',call_initiated:'#f97316',sms_replied:'#22c55e',call_qualified:'#16a34a'};
+  const labels = {sms_sent:'SMS Sent',email_sent:'Email Sent',call_initiated:'Calls',sms_replied:'Replies',call_qualified:'Qualified'};
+
+  let html = '<div style="overflow-x:auto;"><table style="font-size:12px;"><thead><tr><th>Date</th>';
+  types.forEach(t => html += `<th style="color:${colors[t]}">${labels[t]}</th>`);
+  html += '</tr></thead><tbody>';
+
+  dates.forEach(date => {
+    html += `<tr><td style="color:var(--text-dim)">${date}</td>`;
+    types.forEach(t => {
+      const val = byDate[date][t] || 0;
+      html += `<td>${val > 0 ? `<span style="color:${colors[t]};font-weight:600">${val}</span>` : '<span style="color:var(--border)">0</span>'}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+loadAnalytics();
+</script>
+
+<%- include('partials/footer') %>

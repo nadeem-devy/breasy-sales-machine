@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify 2FA — Breasy Sales Machine</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('breasy-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg);
+      padding: 20px;
+    }
+    .verify-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    .verify-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .verify-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .verify-logo svg {
+      filter: drop-shadow(0 2px 8px rgba(59,130,246,0.3));
+    }
+    .verify-logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .verify-logo-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .verify-icon {
+      text-align: center;
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .verify-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .verify-desc {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+    .verify-card .form-group {
+      margin-bottom: 18px;
+    }
+    .verify-card .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    .verify-card input {
+      width: 100%;
+      padding: 14px;
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+    }
+    .verify-card input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .verify-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .verify-btn:hover { opacity: 0.9; }
+    .verify-btn:active { transform: scale(0.98); }
+    .verify-error {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--red);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .verify-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .verify-footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+    .verify-footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="verify-container">
+    <div class="verify-card">
+      <div class="verify-logo">
+        <svg viewBox="0 0 32 32" fill="none" width="40" height="40">
+          <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+          <path d="M8 8h7c2.8 0 4.8 1.5 4.8 3.8 0 1.6-1 2.8-2.4 3.3v.2c1.8.5 2.9 1.8 2.9 3.7 0 2.7-2.2 4.2-5.3 4.2H8V8zm3.4 6h2.8c1.5 0 2.3-.7 2.3-1.8 0-1.2-.9-1.9-2.4-1.9h-2.7v3.7zm0 6.7h3.2c1.6 0 2.5-.8 2.5-2.1 0-1.3-1-2.1-2.7-2.1h-3V20.7z" fill="#fff"/>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+        </svg>
+        <div>
+          <div class="verify-logo-text">Breasy</div>
+          <div class="verify-logo-sub">Sales Machine</div>
+        </div>
+      </div>
+
+      <div class="verify-icon">&#128274;</div>
+      <div class="verify-title">Two-Factor Verification</div>
+      <div class="verify-desc">Enter the 6-digit code from your Google Authenticator app</div>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="verify-error"><%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/2fa/verify">
+        <div class="form-group">
+          <input type="text" id="token" name="token" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" required autofocus>
+        </div>
+        <button type="submit" class="verify-btn">Verify</button>
+      </form>
+    </div>
+    <div class="verify-footer"><a href="/logout">Cancel and sign out</a></div>
+  </div>
+</body>
+</html>

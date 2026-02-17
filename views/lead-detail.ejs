@@ -1,0 +1,857 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div><a href="/leads" style="color:var(--text-dim);text-decoration:none;font-size:13px;">&larr; Back to Leads</a><h1 id="leadName" style="margin-top:4px;">Loading...</h1></div>
+  <div class="btn-group" id="actionBtns"></div>
+</div>
+
+<div class="grid-2">
+  <!-- Lead Info Card -->
+  <div class="card ld-section" data-section="details">
+    <div class="card-header ld-section-toggle" onclick="toggleSection('details')">
+      <h3>Lead Details</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editContact()" style="font-size:11px;padding:4px 10px;">Edit</button>
+        <span class="badge" id="scoreBadge"></span>
+        <span class="ld-chevron" id="chevron-details">&#9660;</span>
+      </div>
+    </div>
+    <div class="ld-section-body" id="body-details">
+      <div id="leadInfo" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card ld-section open" data-section="actions" data-no-collapse="true">
+    <div class="card-header">
+      <h3>Quick Actions</h3>
+    </div>
+    <div class="ld-section-body" id="body-actions" style="max-height:5000px;opacity:1;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success" style="flex:1" onclick="initiateAICall()">AI Call</button>
+          <button class="btn btn-primary" style="flex:1" onclick="initiateManualCall()">Call Now</button>
+        </div>
+        <button class="btn btn-success" onclick="markQualified()">Mark Qualifying</button>
+        <button class="btn btn-warning" onclick="markMeetingBooked()">Meeting Booked</button>
+        <button class="btn btn-success" onclick="markAppDownloaded()">App Downloaded</button>
+        <button class="btn btn-outline" onclick="markReadyForWork()">Mark Ready for Work</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" style="flex:1" onclick="pauseSequence()">Pause Seq.</button>
+          <button class="btn btn-outline" style="flex:1" onclick="resumeSequence()">Resume Seq.</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-danger btn-sm" style="flex:1" onclick="markDNC()">Mark DNC</button>
+          <button class="btn btn-danger btn-sm" style="flex:1" onclick="markBadData()">Bad Data</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="markNotAFit()">Not a Fit</button>
+        </div>
+        <hr style="border-color:var(--border);">
+        <button class="btn btn-outline" id="btnScrapeWebsite" onclick="scrapeWebsite()" disabled>Scrape Website</button>
+        <div class="form-group">
+          <label>Add Note</label>
+          <textarea id="noteInput" rows="2" placeholder="Type a note..."></textarea>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="addNote()">Save Note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Call History & Outcomes -->
+<div class="card ld-section" style="margin-top:20px;" data-section="calls">
+  <div class="card-header ld-section-toggle" onclick="toggleSection('calls')">
+    <h3>Call History & Outcomes</h3>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="badge" id="callCountBadge" style="display:none;"></span>
+      <span class="ld-chevron" id="chevron-calls">&#9660;</span>
+    </div>
+  </div>
+  <div class="ld-section-body" id="body-calls">
+    <div id="callOutcomes">
+      <div class="empty" style="padding:20px;text-align:center;color:var(--text-dim);">No calls yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SMS Conversation -->
+<div class="card ld-section" style="margin-top:20px;" data-section="sms">
+  <div class="card-header ld-section-toggle" onclick="toggleSection('sms')">
+    <h3>SMS Conversation</h3>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();loadSMSThread()">Refresh</button>
+      <span class="ld-chevron" id="chevron-sms">&#9660;</span>
+    </div>
+  </div>
+  <div class="ld-section-body" id="body-sms">
+    <div id="smsThread" class="chat-container">
+      <div class="empty" style="padding:30px;text-align:center;color:var(--text-dim);">No messages yet. Send one below.</div>
+    </div>
+    <div class="chat-compose">
+      <textarea id="smsInput" rows="2" placeholder="Type a message... (merge tags: {{first_name}}, {{company_name}})"></textarea>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+        <span style="color:var(--text-dim);font-size:11px;line-height:30px;" id="smsCharCount">0 / 160</span>
+        <button class="btn btn-primary btn-sm" onclick="sendSMS()">Send SMS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Timeline -->
+<div class="card ld-section" style="margin-top:20px;" data-section="timeline">
+  <div class="card-header ld-section-toggle" onclick="toggleSection('timeline')">
+    <h3>Activity Timeline</h3>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();loadLead()">Refresh</button>
+      <span class="ld-chevron" id="chevron-timeline">&#9660;</span>
+    </div>
+  </div>
+  <div class="ld-section-body" id="body-timeline">
+    <div id="timeline" class="loading">Loading timeline...</div>
+  </div>
+</div>
+
+<!-- Call Transcripts -->
+<div class="card ld-section" id="callLogsCard" style="display:none;margin-top:20px;" data-section="transcripts">
+  <div class="card-header ld-section-toggle" onclick="toggleSection('transcripts')">
+    <h3>Call Transcripts</h3>
+    <span class="ld-chevron" id="chevron-transcripts">&#9660;</span>
+  </div>
+  <div class="ld-section-body" id="body-transcripts">
+    <div id="callLogs"></div>
+  </div>
+</div>
+
+<!-- Edit Contact Modal -->
+<div id="editContactModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="margin-bottom:16px;color:var(--text);">Edit Contact Information</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label style="color:var(--text);">First Name</label><input type="text" id="edit-first-name" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+      <div class="form-group"><label style="color:var(--text);">Last Name</label><input type="text" id="edit-last-name" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    </div>
+    <div class="form-group"><label style="color:var(--text);">Company Name</label><input type="text" id="edit-company" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Email</label><input type="email" id="edit-email" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Phone</label><input type="tel" id="edit-phone" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Job Title</label><input type="text" id="edit-title" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Industry</label><input type="text" id="edit-industry" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Service Type</label><input type="text" id="edit-service" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label style="color:var(--text);">City</label><input type="text" id="edit-city" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+      <div class="form-group"><label style="color:var(--text);">State</label><input type="text" id="edit-state" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveContactEdit()">Save Changes</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Collapsible sections */
+  .ld-section-toggle {
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0 !important;
+  }
+  .ld-section-toggle:hover {
+    opacity: 0.85;
+  }
+  .ld-section.open .ld-section-toggle {
+    margin-bottom: 16px !important;
+  }
+  .ld-chevron {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+  .ld-section:not(.open) .ld-chevron {
+    transform: rotate(-90deg);
+  }
+  .ld-section-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+  }
+  .ld-section:not(.open) .ld-section-body {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ld-section.open .ld-section-body {
+    max-height: 5000px;
+    opacity: 1;
+  }
+
+  /* Lead detail info table */
+  .ld-info-table { width: 100%; }
+  .ld-info-table td { padding: 6px 0; font-size: 13px; vertical-align: top; }
+  .ld-info-table td:first-child { color: var(--text-dim); width: 120px; white-space: nowrap; }
+  .ld-info-table td:last-child { font-weight: 500; }
+
+  /* Lead quality box */
+  .ld-quality-box {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--card-dim);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .ld-quality-title { font-weight: 600; margin-bottom: 10px; font-size: 13px; color: var(--text); }
+  .ld-quality-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .ld-stat-box {
+    text-align: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--card-dim-inner);
+    min-width: 60px;
+    border: 1px solid var(--border);
+  }
+  .ld-stat-value { font-size: 22px; font-weight: 700; }
+  .ld-stat-label { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Call outcome cards */
+  .ld-call-card {
+    padding: 14px;
+    border-radius: 8px;
+    background: var(--card-dim);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .ld-call-card:last-child { margin-bottom: 0; }
+  .ld-call-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ld-call-meta {
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .ld-call-summary {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .ld-call-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Outcome badges */
+  .ld-outcome-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ld-outcome-qualified { background: rgba(22,163,74,0.15); color: var(--green); }
+  .ld-outcome-callback { background: rgba(37,99,235,0.15); color: var(--accent); }
+  .ld-outcome-not_interested { background: rgba(234,88,12,0.15); color: var(--orange); }
+  .ld-outcome-no_answer { background: rgba(156,163,175,0.15); color: var(--text-dim); }
+  .ld-outcome-voicemail { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .ld-outcome-wrong_number { background: rgba(220,38,38,0.15); color: var(--red); }
+  .ld-outcome-busy { background: rgba(156,163,175,0.15); color: var(--text-dim); }
+  .ld-outcome-gatekeeper { background: rgba(147,51,234,0.15); color: var(--purple, #a78bfa); }
+  .ld-outcome-none { background: rgba(156,163,175,0.1); color: var(--text-dim); }
+
+  /* Outcome summary strip */
+  .ld-outcome-summary {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--card-dim);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .ld-outcome-stat {
+    text-align: center;
+    min-width: 50px;
+  }
+  .ld-outcome-stat-val { font-size: 18px; font-weight: 700; }
+  .ld-outcome-stat-lbl { font-size: 10px; color: var(--text-dim); }
+
+  /* CSS variables for card dim backgrounds */
+  :root {
+    --card-dim: rgba(255,255,255,0.03);
+    --card-dim-inner: rgba(255,255,255,0.05);
+  }
+  [data-theme="light"] {
+    --card-dim: rgba(0,0,0,0.03);
+    --card-dim-inner: rgba(0,0,0,0.05);
+  }
+</style>
+
+<script>
+const leadId = <%= leadId %>;
+let leadData = null;
+
+// ========== Collapsible Sections ==========
+
+// Default: all open
+const sectionStates = JSON.parse(localStorage.getItem('ld-sections') || '{}');
+
+function initSections() {
+  document.querySelectorAll('.ld-section').forEach(el => {
+    if (el.dataset.noCollapse) return; // skip non-collapsible sections
+    const key = el.dataset.section;
+    const isOpen = sectionStates[key] !== false; // default open
+    if (isOpen) el.classList.add('open');
+  });
+}
+
+function toggleSection(key) {
+  const el = document.querySelector(`.ld-section[data-section="${key}"]`);
+  if (!el) return;
+  el.classList.toggle('open');
+  sectionStates[key] = el.classList.contains('open');
+  localStorage.setItem('ld-sections', JSON.stringify(sectionStates));
+}
+
+initSections();
+
+// ========== Load Lead ==========
+
+async function loadLead() {
+  try {
+    const res = await fetch(`/api/leads/${leadId}`);
+    const data = await res.json();
+    leadData = data.lead;
+    const l = data.lead;
+
+    // Build display name with fallbacks
+    const fullName = [l.first_name, l.last_name].filter(Boolean).join(' ').trim();
+    const displayName = fullName || l.company_name || `Lead #${l.id}`;
+    const companyHtml = l.company_name
+      ? l.company_id
+        ? `<a href="/company/${l.company_id}" style="font-size:16px;font-weight:600;color:var(--accent);margin-top:2px;display:block;text-decoration:none;">${escapeHtml(l.company_name)}</a>`
+        : `<div style="font-size:16px;font-weight:600;color:var(--accent);margin-top:2px;">${escapeHtml(l.company_name)}</div>`
+      : '';
+    document.getElementById('leadName').innerHTML = `${escapeHtml(displayName)}${companyHtml}`;
+
+    document.getElementById('scoreBadge').textContent = `Score: ${l.score} (${l.score_tier})`;
+    document.getElementById('scoreBadge').className = `badge badge-${l.score_tier}`;
+
+    const gradeColors = { A: 'var(--green)', B: 'var(--accent)', C: 'var(--yellow)', D: 'var(--orange)', F: 'var(--red)' };
+    const gradeColor = gradeColors[l.qualification_grade] || 'var(--text-dim)';
+    const phoneTypeLabel = l.phone_line_type ? l.phone_line_type.charAt(0).toUpperCase() + l.phone_line_type.slice(1) : '—';
+    const websiteLabel = l.website_status === 'live' ? '<span style="color:var(--green)">Live</span>' : l.website_status === 'dead' ? '<span style="color:var(--red)">Dead</span>' : '—';
+    const enrichSources = l.enrichment_sources ? l.enrichment_sources.replace(/,/g, ', ') : '—';
+
+    document.getElementById('leadInfo').innerHTML = `
+      <table class="ld-info-table">
+        <tr><td>Company</td><td>${l.company_id ? '<a href="/company/' + l.company_id + '" style="color:var(--accent);font-weight:600;">' + escapeHtml(l.company_name || '') + '</a>' : '<strong>' + escapeHtml(l.company_name || '—') + '</strong>'}</td></tr>
+        <tr><td>Contact</td><td>${[l.first_name, l.last_name].filter(Boolean).join(' ') || '—'}</td></tr>
+        <tr><td>Phone</td><td>${l.phone ? '<a href="tel:' + l.phone + '" style="color:var(--accent)">' + l.phone + '</a>' : '—'}</td></tr>
+        <tr><td>Email</td><td>${l.email ? '<a href="mailto:' + l.email + '" style="color:var(--accent)">' + l.email + '</a>' : '—'}</td></tr>
+        <tr><td>Service Type</td><td><strong>${l.service_type || '—'}</strong></td></tr>
+        <tr><td>Industry</td><td>${l.industry || '—'}</td></tr>
+        <tr><td>Market</td><td>${[l.city, l.state].filter(Boolean).join(', ') || '—'}</td></tr>
+        <tr><td>Source</td><td>${l.source || '—'}</td></tr>
+        <tr><td>Status</td><td><span class="badge badge-${l.status}">${(l.status||'').replace(/_/g,' ')}</span></td></tr>
+        <tr><td>Score</td><td><span class="score score-${l.score_tier}">${l.score}</span></td></tr>
+        <tr><td>Sequence</td><td>Step ${l.current_step}/7 — ${l.sequence_status}</td></tr>
+      </table>
+
+      <div class="ld-quality-box">
+        <div class="ld-quality-title">Lead Quality</div>
+        <div class="ld-quality-stats">
+          <div class="ld-stat-box">
+            <div class="ld-stat-value" style="color:${gradeColor};">${l.qualification_grade || '—'}</div>
+            <div class="ld-stat-label">Grade</div>
+          </div>
+          <div class="ld-stat-box">
+            <div class="ld-stat-value" style="color:var(--accent);">${l.quality_score || 0}</div>
+            <div class="ld-stat-label">Quality Score</div>
+          </div>
+          <div class="ld-stat-box">
+            <div class="ld-stat-value" style="color:var(--accent);">${l.data_completeness || 0}%</div>
+            <div class="ld-stat-label">Completeness</div>
+          </div>
+        </div>
+        <table class="ld-info-table" style="font-size:12px;">
+          <tr><td>Phone Type</td><td>${phoneTypeLabel}</td></tr>
+          <tr><td>Website</td><td>${websiteLabel}</td></tr>
+          <tr><td>Sources</td><td>${enrichSources}</td></tr>
+        </table>
+      </div>
+
+      <table class="ld-info-table" style="margin-top:14px;">
+        <tr><td>SMS Sent</td><td>${l.total_sms_sent}</td></tr>
+        <tr><td>Emails Sent</td><td>${l.total_emails_sent}</td></tr>
+        <tr><td>Calls Made</td><td>${l.total_calls_made}</td></tr>
+        <tr><td>Replied</td><td>${l.replied ? '<span style="color:var(--green)">Yes</span>' : 'No'}</td></tr>
+        <tr><td>Opted Out</td><td>SMS: ${l.sms_opt_out?'<span style="color:var(--red)">Yes</span>':'No'} | Email: ${l.email_opt_out?'<span style="color:var(--red)">Yes</span>':'No'}</td></tr>
+        <tr><td>Created</td><td>${new Date(l.created_at+'Z').toLocaleString()}</td></tr>
+      </table>
+    `;
+
+    // Enable/disable scrape website button
+    const scrapeBtn = document.getElementById('btnScrapeWebsite');
+    if (l.website) {
+      scrapeBtn.disabled = false;
+      scrapeBtn.title = 'Scrape ' + l.website;
+    } else {
+      scrapeBtn.disabled = true;
+      scrapeBtn.title = 'No website on record';
+    }
+
+    // Show website scrape results if available
+    let enrichData = {};
+    try { enrichData = JSON.parse(l.enrichment_data || '{}'); } catch(e) {}
+    if (enrichData.website_scrape) {
+      scrapeBtn.textContent = 'Re-scrape Website';
+      const ws = enrichData.website_scrape;
+      let wsHtml = '<div class="ld-quality-box" style="margin-top:12px;">';
+      wsHtml += '<div class="ld-quality-title">Website Scrape Results</div>';
+      wsHtml += '<table class="ld-info-table" style="font-size:12px;">';
+      if (ws.emails && ws.emails.length) {
+        wsHtml += '<tr><td>Emails</td><td>' + ws.emails.map(function(e){ return '<a href="mailto:'+escapeHtml(e)+'" style="color:var(--accent)">'+escapeHtml(e)+'</a>'; }).join(', ') + '</td></tr>';
+      }
+      if (ws.owner_name) {
+        wsHtml += '<tr><td>Owner/Contact</td><td>' + escapeHtml(ws.owner_name) + '</td></tr>';
+      }
+      if (ws.services && ws.services.length) {
+        wsHtml += '<tr><td>Services</td><td>' + ws.services.map(function(s){ return escapeHtml(s); }).join(', ') + '</td></tr>';
+      }
+      if (ws.phones && ws.phones.length) {
+        wsHtml += '<tr><td>Phones</td><td>' + ws.phones.map(function(p){ return escapeHtml(p); }).join(', ') + '</td></tr>';
+      }
+      if (ws.social_links) {
+        const links = Object.entries(ws.social_links).filter(function(kv){ return kv[1]; });
+        if (links.length) {
+          wsHtml += '<tr><td>Social</td><td>' + links.map(function(kv){ return '<a href="'+escapeHtml(kv[1])+'" target="_blank" style="color:var(--accent);margin-right:8px;text-transform:capitalize;">'+kv[0]+'</a>'; }).join('') + '</td></tr>';
+        }
+      }
+      if (ws.description) {
+        wsHtml += '<tr><td>Description</td><td style="font-weight:normal;color:var(--text-dim);">' + escapeHtml(ws.description).substring(0, 200) + '</td></tr>';
+      }
+      if (ws.scraped_at) {
+        wsHtml += '<tr><td>Scraped</td><td style="color:var(--text-dim);">' + new Date(ws.scraped_at).toLocaleString() + '</td></tr>';
+      }
+      wsHtml += '</table></div>';
+      document.getElementById('leadInfo').innerHTML += wsHtml;
+    }
+
+    // ===== Call History & Outcomes =====
+    renderCallOutcomes(data.callLogs || []);
+
+    // ===== Activity Timeline =====
+    const timelineEl = document.getElementById('timeline');
+    if (!data.activities.length) {
+      timelineEl.innerHTML = '<div class="empty">No activity yet.</div>';
+    } else {
+      timelineEl.innerHTML = '<div class="timeline">' + data.activities.map(a => {
+        const channel = a.channel || 'system';
+        const time = new Date(a.created_at + 'Z').toLocaleString();
+        const typeLabel = a.type.replace(/_/g, ' ');
+        return `<div class="timeline-item ${channel}">
+          <div>
+            <strong style="font-size:12px;text-transform:capitalize;">${typeLabel}</strong>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:8px;">${time}</span>
+            ${a.score_before != null ? `<span style="font-size:11px;margin-left:8px;color:var(--yellow)">Score: ${a.score_before} &rarr; ${a.score_after}</span>` : ''}
+            <div style="color:var(--text-dim);font-size:13px;margin-top:4px;">${(a.content||'').substring(0,300)}</div>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+
+    // ===== Call Transcripts =====
+    if (data.callLogs && data.callLogs.some(c => c.transcript)) {
+      document.getElementById('callLogsCard').style.display = 'block';
+      const withTranscripts = data.callLogs.filter(c => c.transcript);
+      document.getElementById('callLogs').innerHTML = withTranscripts.map(c => {
+        const typeBadge = {
+          ai: '<span class="badge badge-ai-call">AI</span>',
+          manual: '<span class="badge badge-manual-call">Manual</span>',
+          inbound: '<span class="badge badge-inbound-call">Inbound</span>',
+          browser: '<span class="badge badge-browser-call">Browser</span>',
+        }[c.call_type] || '';
+        return `<div style="border-bottom:1px solid var(--border);padding:12px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>${typeBadge} <strong>${c.outcome || c.status}</strong></div>
+            <span style="color:var(--text-dim);font-size:12px;">${c.duration_seconds || 0}s — ${new Date(c.created_at+'Z').toLocaleString()}</span>
+          </div>
+          ${c.summary ? `<div style="margin-top:6px;color:var(--text-dim);font-size:13px;">${c.summary}</div>` : ''}
+          ${c.interest_level ? `<div style="margin-top:4px;font-size:12px;">Interest: <strong>${c.interest_level}</strong></div>` : ''}
+          <details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--accent);font-size:12px;">View Transcript</summary><pre style="font-size:11px;color:var(--text-dim);white-space:pre-wrap;margin-top:8px;max-height:300px;overflow-y:auto;">${c.transcript}</pre></details>
+        </div>`;
+      }).join('');
+    }
+
+  } catch(e) { console.error('Load lead error:', e); }
+}
+
+// ========== Call Outcomes Renderer ==========
+
+function renderCallOutcomes(callLogs) {
+  const container = document.getElementById('callOutcomes');
+  const badge = document.getElementById('callCountBadge');
+
+  if (!callLogs.length) {
+    container.innerHTML = '<div class="empty" style="padding:20px;text-align:center;color:var(--text-dim);">No calls yet.</div>';
+    badge.style.display = 'none';
+    return;
+  }
+
+  badge.style.display = '';
+  badge.textContent = `${callLogs.length} call${callLogs.length !== 1 ? 's' : ''}`;
+  badge.className = 'badge';
+
+  // Outcome summary counts
+  const counts = {};
+  callLogs.forEach(c => {
+    const o = c.outcome || 'none';
+    counts[o] = (counts[o] || 0) + 1;
+  });
+
+  const outcomeLabels = {
+    qualified: 'Qualified', callback: 'Callback', not_interested: 'Not Interested',
+    no_answer: 'No Answer', voicemail: 'Voicemail', wrong_number: 'Wrong #',
+    busy: 'Busy', gatekeeper: 'Gatekeeper', none: 'Pending',
+  };
+  const outcomeColors = {
+    qualified: 'var(--green)', callback: 'var(--accent)', not_interested: 'var(--orange)',
+    no_answer: 'var(--text-dim)', voicemail: 'var(--yellow)', wrong_number: 'var(--red)',
+    busy: 'var(--text-dim)', gatekeeper: 'var(--purple, #a78bfa)', none: 'var(--text-dim)',
+  };
+
+  // Summary strip
+  let summaryHtml = '<div class="ld-outcome-summary">';
+  for (const [key, count] of Object.entries(counts)) {
+    summaryHtml += `<div class="ld-outcome-stat">
+      <div class="ld-outcome-stat-val" style="color:${outcomeColors[key] || 'var(--text-dim)'}">${count}</div>
+      <div class="ld-outcome-stat-lbl">${outcomeLabels[key] || key}</div>
+    </div>`;
+  }
+  summaryHtml += '</div>';
+
+  // Individual call cards
+  let cardsHtml = callLogs.map(c => {
+    const outcome = c.outcome || 'none';
+    const outcomeLabel = outcomeLabels[outcome] || outcome;
+    const typeBadge = {
+      ai: '<span class="badge badge-ai-call">AI</span>',
+      manual: '<span class="badge badge-manual-call">Manual</span>',
+      inbound: '<span class="badge badge-inbound-call">Inbound</span>',
+      browser: '<span class="badge badge-browser-call">Browser</span>',
+    }[c.call_type] || '<span class="badge">' + (c.call_type || '?') + '</span>';
+
+    const duration = c.duration_seconds ? formatDuration(c.duration_seconds) : '—';
+    const time = new Date(c.created_at + 'Z').toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+
+    return `<div class="ld-call-card">
+      <div class="ld-call-header">
+        <div class="ld-call-badges">
+          ${typeBadge}
+          <span class="ld-outcome-badge ld-outcome-${outcome}">${outcomeLabel}</span>
+        </div>
+        <div class="ld-call-meta">${duration} &middot; ${time}</div>
+      </div>
+      ${c.summary ? `<div class="ld-call-summary">${escapeHtml(c.summary)}</div>` : ''}
+      ${c.interest_level ? `<div style="margin-top:6px;font-size:12px;">Interest: <strong>${c.interest_level}</strong></div>` : ''}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = summaryHtml + cardsHtml;
+}
+
+function formatDuration(secs) {
+  if (!secs || secs < 1) return '< 1s';
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// ========== SMS Chat ==========
+
+async function loadSMSThread() {
+  try {
+    const res = await fetch(`/api/leads/${leadId}/sms-thread`);
+    const data = await res.json();
+    const container = document.getElementById('smsThread');
+
+    if (!data.messages.length) {
+      container.innerHTML = '<div class="empty" style="padding:30px;text-align:center;color:var(--text-dim);">No messages yet. Send one below.</div>';
+      return;
+    }
+
+    container.innerHTML = data.messages.map(m => {
+      const isOutbound = m.type === 'sms_sent';
+      const time = new Date(m.created_at + 'Z').toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      return `<div class="chat-bubble ${isOutbound ? 'chat-outbound' : 'chat-inbound'}">
+        <div class="chat-text">${escapeHtml(m.content)}</div>
+        <div class="chat-time">${time}</div>
+      </div>`;
+    }).join('');
+
+    container.scrollTop = container.scrollHeight;
+  } catch(e) { console.error('SMS thread error:', e); }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function sendSMS() {
+  const input = document.getElementById('smsInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.disabled = true;
+  try {
+    const res = await fetch(`/api/leads/${leadId}/sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+    });
+    if (res.ok) {
+      input.value = '';
+      updateCharCount();
+      await loadSMSThread();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to send SMS');
+    }
+  } catch(e) {
+    alert('Failed to send SMS');
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+function updateCharCount() {
+  const len = document.getElementById('smsInput').value.length;
+  document.getElementById('smsCharCount').textContent = `${len} / 160`;
+}
+
+// ========== Calls ==========
+
+async function initiateAICall() {
+  if (!confirm('Start an AI call to this lead?')) return;
+  try {
+    const res = await fetch(`/api/leads/${leadId}/call-ai`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert(data.message || 'AI call initiated');
+      loadLead();
+    } else {
+      alert('AI Call Failed: ' + (data.error || 'Unknown error'));
+    }
+  } catch(e) {
+    alert('AI Call Failed: Could not reach server. Check your connection.');
+  }
+}
+
+function initiateManualCall() {
+  if (!leadData || !leadData.phone) {
+    alert('Cannot call: Lead has no phone number');
+    return;
+  }
+  if (leadData.call_opt_out) {
+    alert('Cannot call: Lead has opted out of calls');
+    return;
+  }
+  BreasySoftphone.makeCall(leadId);
+}
+
+// ========== Other Actions ==========
+
+async function markQualified() { if(!confirm('Mark as qualifying? This will notify Mari.')) return; await fetch(`/api/leads/${leadId}/mark-qualified`, {method:'POST'}); loadLead(); }
+async function markDNC() { if(!confirm('Mark as Do Not Contact? This cannot be undone.')) return; await fetch(`/api/leads/${leadId}/mark-dnc`, {method:'POST'}); loadLead(); }
+async function markBadData() { if(!confirm('Mark as bad data? Outreach will stop.')) return; await fetch(`/api/leads/${leadId}/mark-bad-data`, {method:'POST'}); loadLead(); }
+async function markNotAFit() { if(!confirm('Mark as not a fit? Outreach will stop.')) return; await fetch(`/api/leads/${leadId}/mark-not-a-fit`, {method:'POST'}); loadLead(); }
+async function markReadyForWork() { if(!confirm('Mark as ready for work?')) return; await fetch(`/api/leads/${leadId}/mark-ready-for-work`, {method:'POST'}); loadLead(); }
+async function pauseSequence() { await fetch(`/api/leads/${leadId}/pause`, {method:'POST'}); loadLead(); }
+async function resumeSequence() { await fetch(`/api/leads/${leadId}/resume`, {method:'POST'}); loadLead(); }
+async function markMeetingBooked() { await fetch(`/api/leads/${leadId}/meeting-booked`, {method:'POST'}); loadLead(); }
+async function markAppDownloaded() { await fetch(`/api/leads/${leadId}/app-downloaded`, {method:'POST'}); loadLead(); }
+async function addNote() {
+  const note = document.getElementById('noteInput').value.trim();
+  if (!note) return;
+  await fetch(`/api/leads/${leadId}/note`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({note})});
+  document.getElementById('noteInput').value = '';
+  loadLead();
+}
+
+// ========== Edit Contact ==========
+
+function editContact() {
+  if (!leadData) return;
+  document.getElementById('edit-first-name').value = leadData.first_name || '';
+  document.getElementById('edit-last-name').value = leadData.last_name || '';
+  document.getElementById('edit-company').value = leadData.company_name || '';
+  document.getElementById('edit-email').value = leadData.email || '';
+  document.getElementById('edit-phone').value = leadData.phone || '';
+  document.getElementById('edit-title').value = leadData.job_title || '';
+  document.getElementById('edit-industry').value = leadData.industry || '';
+  document.getElementById('edit-service').value = leadData.service_type || '';
+  document.getElementById('edit-city').value = leadData.city || '';
+  document.getElementById('edit-state').value = leadData.state || '';
+  document.getElementById('editContactModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editContactModal').style.display = 'none';
+}
+
+async function saveContactEdit() {
+  const data = {
+    first_name: document.getElementById('edit-first-name').value.trim(),
+    last_name: document.getElementById('edit-last-name').value.trim(),
+    company_name: document.getElementById('edit-company').value.trim(),
+    email: document.getElementById('edit-email').value.trim(),
+    phone: document.getElementById('edit-phone').value.trim(),
+    job_title: document.getElementById('edit-title').value.trim(),
+    industry: document.getElementById('edit-industry').value.trim(),
+    service_type: document.getElementById('edit-service').value.trim(),
+    city: document.getElementById('edit-city').value.trim(),
+    state: document.getElementById('edit-state').value.trim(),
+  };
+
+  try {
+    const res = await fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      closeEditModal();
+      loadLead();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to update'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ========== Website Scraper ==========
+
+function showScrapeOverlay() {
+  // Remove existing if any
+  var existing = document.getElementById('scrapeOverlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'scrapeOverlay';
+  overlay.innerHTML = `
+    <div style="position:fixed;inset:0;background:var(--overlay-bg,rgba(0,0,0,0.7));z-index:1000;display:flex;align-items:center;justify-content:center;">
+      <div style="background:var(--bg-card,#1a1a2e);border:1px solid var(--border,#333);border-radius:16px;padding:32px 40px;min-width:360px;max-width:480px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div id="scrapeSpinner" style="margin:0 auto 20px;">
+          <svg width="48" height="48" viewBox="0 0 48 48" style="animation:scrape-spin 1s linear infinite;">
+            <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border,#444)" stroke-width="4"/>
+            <circle cx="24" cy="24" r="20" fill="none" stroke="var(--primary,#6366f1)" stroke-width="4" stroke-dasharray="80 50" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div id="scrapeTitle" style="font-size:18px;font-weight:600;margin-bottom:8px;">Scraping Website</div>
+        <div id="scrapeStatus" style="color:var(--text-dim,#888);font-size:14px;margin-bottom:16px;">Fetching homepage & discovering pages...</div>
+        <div id="scrapeResults" style="display:none;text-align:left;margin-top:16px;"></div>
+        <button id="scrapeCloseBtn" style="display:none;margin-top:16px;padding:8px 24px;background:var(--primary,#6366f1);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;" onclick="document.getElementById('scrapeOverlay').remove()">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function updateScrapeOverlay(title, status, results, done) {
+  var el = document.getElementById('scrapeOverlay');
+  if (!el) return;
+  if (title) document.getElementById('scrapeTitle').textContent = title;
+  if (status) document.getElementById('scrapeStatus').textContent = status;
+  if (done) {
+    document.getElementById('scrapeSpinner').innerHTML = results
+      ? '<div style="font-size:36px;margin-bottom:4px;">&#10003;</div>'
+      : '<div style="font-size:36px;margin-bottom:4px;">&#9888;</div>';
+    document.getElementById('scrapeCloseBtn').style.display = 'inline-block';
+  }
+  if (results) {
+    var rDiv = document.getElementById('scrapeResults');
+    rDiv.style.display = 'block';
+    rDiv.innerHTML = results;
+  }
+}
+
+async function scrapeWebsite() {
+  const btn = document.getElementById('btnScrapeWebsite');
+  const origText = btn.textContent;
+  btn.disabled = true;
+
+  showScrapeOverlay();
+
+  // Animate status messages
+  var statusMsgs = ['Fetching homepage & discovering pages...', 'Crawling about, contact & team pages...', 'Extracting emails, owner & services...', 'Analyzing social links & phone numbers...'];
+  var msgIdx = 0;
+  var statusTimer = setInterval(function() {
+    msgIdx++;
+    if (msgIdx < statusMsgs.length) {
+      updateScrapeOverlay(null, statusMsgs[msgIdx]);
+    }
+  }, 2500);
+
+  try {
+    const res = await fetch('/api/enrichment/' + leadId + '/website-scrape', { method: 'POST' });
+    const data = await res.json();
+    clearInterval(statusTimer);
+
+    if (data.found) {
+      var d = data.data;
+      var rows = [];
+      rows.push('<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;margin-top:8px;">');
+      rows.push('<span style="color:var(--text-dim);">Emails</span><span>' + (d.emails.length ? d.emails.join(', ') : '<span style="color:var(--text-dim)">None found</span>') + '</span>');
+      rows.push('<span style="color:var(--text-dim);">Owner</span><span>' + (d.owner_name || '<span style="color:var(--text-dim)">Not found</span>') + '</span>');
+      rows.push('<span style="color:var(--text-dim);">Services</span><span>' + (d.services.length ? d.services.length + ' found' : '<span style="color:var(--text-dim)">None found</span>') + '</span>');
+      rows.push('<span style="color:var(--text-dim);">Phones</span><span>' + (d.phones.length ? d.phones.join(', ') : '<span style="color:var(--text-dim)">None found</span>') + '</span>');
+      rows.push('<span style="color:var(--text-dim);">Social</span><span>' + (Object.keys(d.social_links || {}).length ? Object.keys(d.social_links).join(', ') : '<span style="color:var(--text-dim)">None found</span>') + '</span>');
+      rows.push('</div>');
+      if (data.updated_fields.length > 0) {
+        rows.push('<div style="margin-top:12px;padding:8px 12px;background:rgba(34,197,94,0.1);border-radius:8px;font-size:12px;color:var(--green,#22c55e);">Updated: ' + data.updated_fields.join(', ') + '</div>');
+      }
+
+      updateScrapeOverlay('Scrape Complete', d.emails.length + ' email(s), ' + d.services.length + ' service(s), ' + Object.keys(d.social_links||{}).length + ' social link(s)', rows.join(''), true);
+      loadLead();
+    } else {
+      updateScrapeOverlay('Scrape Failed', data.error || data.message || 'No data found', null, true);
+    }
+  } catch (e) {
+    clearInterval(statusTimer);
+    updateScrapeOverlay('Scrape Failed', e.message, null, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// ========== Init ==========
+
+document.getElementById('smsInput').addEventListener('input', updateCharCount);
+document.getElementById('smsInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSMS(); }
+});
+
+loadLead();
+loadSMSThread();
+setInterval(loadSMSThread, 10000);
+</script>
+<style>@keyframes scrape-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+
+<%- include('partials/footer') %>

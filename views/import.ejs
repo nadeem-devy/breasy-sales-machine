@@ -1,0 +1,818 @@
+<%- include('partials/header') %>
+
+<style>
+/* ===== Enrichment Modal ===== */
+.enrich-overlay {
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,0.85); backdrop-filter:blur(8px);
+  justify-content:center; align-items:center;
+}
+.enrich-overlay.active { display:flex; }
+.enrich-modal {
+  width:580px; max-width:95vw; max-height:90vh; overflow-y:auto;
+  background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);
+  border:1px solid #334155; border-radius:16px;
+  padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.5);
+  animation: modalIn 0.35s ease;
+}
+@keyframes modalIn { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+.enrich-header {
+  text-align:center; margin-bottom:24px; padding-bottom:16px;
+  border-bottom:1px solid #1e293b;
+}
+.enrich-header h2 { font-size:18px; color:#f1f5f9; margin:0 0 4px; }
+.enrich-header .subtitle { font-size:13px; color:#64748b; }
+
+/* Step row */
+.enrich-step {
+  display:flex; align-items:flex-start; gap:14px; padding:12px 0;
+  border-bottom:1px solid #1e293b22; opacity:0; transform:translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.enrich-step.visible { opacity:1; transform:translateY(0); }
+.enrich-step:last-child { border-bottom:none; }
+
+/* Icon column */
+.step-icon {
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; position:relative;
+}
+.step-icon.pending { background:#1e293b; color:#475569; }
+.step-icon.running { background:#1e3a5f; color:#3b82f6; }
+.step-icon.success { background:#052e16; color:#22c55e; }
+.step-icon.fail    { background:#450a0a; color:#ef4444; }
+.step-icon.skip    { background:#1e293b; color:#64748b; }
+
+/* Spinner */
+@keyframes spin { to{transform:rotate(360deg)} }
+.spinner {
+  width:20px; height:20px; border:2.5px solid #1e3a5f;
+  border-top-color:#3b82f6; border-radius:50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Step content */
+.step-body { flex:1; min-width:0; }
+.step-title { font-size:13px; font-weight:600; color:#e2e8f0; }
+.step-subtitle { font-size:11px; color:#64748b; margin-top:2px; }
+.step-data {
+  margin-top:6px; font-size:12px; color:#94a3b8;
+  background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:8px 10px;
+  animation: fadeSlide 0.4s ease;
+}
+@keyframes fadeSlide { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.step-data .data-row {
+  display:flex; justify-content:space-between; padding:2px 0;
+}
+.step-data .data-label { color:#64748b; }
+.step-data .data-value { color:#e2e8f0; font-weight:500; }
+.step-data .data-value.green { color:#22c55e; }
+.step-data .data-value.red { color:#ef4444; }
+.step-data .data-value.yellow { color:#eab308; }
+.step-data .data-value.blue { color:#3b82f6; }
+
+/* Impact badge */
+.impact-badge {
+  display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+  border-radius:10px; margin-top:4px;
+}
+.impact-badge.positive { background:rgba(34,197,94,0.15); color:#22c55e; }
+.impact-badge.negative { background:rgba(239,68,68,0.15); color:#ef4444; }
+.impact-badge.neutral  { background:rgba(100,116,139,0.15); color:#94a3b8; }
+
+/* Final score reveal */
+.final-reveal {
+  text-align:center; padding:24px 0 8px; margin-top:16px;
+  border-top:1px solid #334155; opacity:0; transform:scale(0.9);
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.final-reveal.visible { opacity:1; transform:scale(1); }
+
+.grade-badge-big {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:80px; height:80px; border-radius:16px; font-size:42px; font-weight:900;
+  margin-bottom:12px; border:3px solid;
+  animation: gradePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes gradePop { from{transform:scale(0)} 60%{transform:scale(1.15)} to{transform:scale(1)} }
+
+.score-counter { font-size:32px; font-weight:800; color:#f1f5f9; }
+.score-max { font-size:14px; color:#64748b; font-weight:400; }
+
+/* Progress bar in final */
+.final-bar {
+  height:10px; background:#1e293b; border-radius:5px; margin:12px 40px; overflow:hidden;
+}
+.final-bar-fill {
+  height:100%; border-radius:5px; transition: width 1.2s ease;
+}
+
+/* Signal breakdown in final */
+.signal-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:4px 16px;
+  text-align:left; max-width:440px; margin:16px auto 0;
+  font-size:12px;
+}
+.signal-row {
+  display:flex; justify-content:space-between; padding:3px 0;
+  border-bottom:1px solid #1e293b;
+}
+.signal-name { color:#94a3b8; }
+.signal-pts { font-weight:700; }
+.signal-pts.pos { color:#22c55e; }
+.signal-pts.neg { color:#ef4444; }
+.signal-pts.zero { color:#374151; }
+
+/* Action buttons */
+.enrich-actions {
+  display:flex; gap:10px; justify-content:center; margin-top:20px;
+}
+</style>
+
+<div class="page-header">
+  <h1>Import Leads</h1>
+</div>
+
+<div class="grid-2">
+  <!-- CSV Upload -->
+  <div class="card">
+    <div class="card-header"><h3>Upload CSV</h3></div>
+    <form id="importForm">
+      <div class="form-group">
+        <label>Campaign</label>
+        <select id="importCampaign" name="campaign_id">
+          <option value="1">Default Campaign</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Lead Source</label>
+        <select id="importSource" name="source">
+          <option value="google_maps">Google Maps</option>
+          <option value="search">Search</option>
+          <option value="agent_scrape">Agent Scrape</option>
+          <option value="hubspot">HubSpot</option>
+          <option value="manual">Manual</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>CSV File</label>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFile').click()">
+          <input type="file" id="csvFile" accept=".csv" onchange="fileSelected(this)">
+          <div id="uploadLabel">
+            <div style="font-size:32px;margin-bottom:8px;">+</div>
+            <div>Click to upload CSV file</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Required columns: first_name, last_name, email, phone</div>
+            <div style="font-size:12px;color:var(--text-dim);">Optional: company_name, service_type, job_title, industry, city, state</div>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="importBtn" disabled>Import Leads</button>
+    </form>
+    <div id="importResult" style="margin-top:16px;display:none;"></div>
+  </div>
+
+  <!-- Manual Add -->
+  <div class="card">
+    <div class="card-header"><h3>Add Single Lead</h3></div>
+    <form id="singleForm">
+      <div class="form-group"><label>First Name *</label><input type="text" id="s_fname" required></div>
+      <div class="form-group"><label>Last Name</label><input type="text" id="s_lname"></div>
+      <div class="form-group"><label>Phone *</label><input type="tel" id="s_phone" placeholder="+1 555 123 4567" required></div>
+      <div class="form-group"><label>Email</label><input type="email" id="s_email"></div>
+      <div class="form-group"><label>Company Name</label><input type="text" id="s_company"></div>
+      <div class="form-group">
+        <label>Service Type</label>
+        <select id="s_service_type">
+          <option value="">— Select —</option>
+          <option value="Landscaping">Landscaping</option>
+          <option value="Lawn Care">Lawn Care</option>
+          <option value="Irrigation">Irrigation</option>
+          <option value="Tree Service">Tree Service</option>
+          <option value="Handyman">Handyman</option>
+          <option value="Property Maintenance">Property Maintenance</option>
+          <option value="Pest Control">Pest Control</option>
+          <option value="Pool Service">Pool Service</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="HVAC">HVAC</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Roofing">Roofing</option>
+          <option value="Painting">Painting</option>
+          <option value="General Contractor">General Contractor</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Industry</label><input type="text" id="s_industry" placeholder="e.g. Landscaping"></div>
+      <div class="form-group"><label>City</label><input type="text" id="s_city"></div>
+      <div class="form-group"><label>State</label><input type="text" id="s_state"></div>
+      <button type="submit" class="btn btn-primary">Add & Analyze Lead</button>
+    </form>
+    <div id="singleResult" style="margin-top:12px;display:none;"></div>
+  </div>
+</div>
+
+<!-- Enrichment Modal Overlay -->
+<div class="enrich-overlay" id="enrichOverlay">
+  <div class="enrich-modal" id="enrichModal">
+    <div class="enrich-header">
+      <h2 id="enrichTitle">Analyzing Lead...</h2>
+      <div class="subtitle" id="enrichSubtitle"></div>
+    </div>
+    <div id="enrichSteps"></div>
+    <div class="final-reveal" id="finalReveal"></div>
+    <div class="enrich-actions" id="enrichActions" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Quality Filter Criteria (Enhanced) -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <h3>Lead Quality Filter (Enhanced)</h3>
+    <span style="font-size:12px;color:var(--green);background:rgba(34,197,94,0.15);padding:3px 10px;border-radius:12px;">22 signals / A-F grading</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;font-size:13px;">
+    <div>
+      <div style="font-weight:600;color:var(--red);margin-bottom:8px;">Auto-Reject If:</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:var(--text-dim);">
+        <div>&#10007; No business name</div>
+        <div>&#10007; Invalid / toll-free phone</div>
+        <div>&#10007; No city AND no state</div>
+        <div>&#10007; Wrong niche (configurable per campaign)</div>
+        <div>&#10007; 50+ employees</div>
+        <div>&#10007; Spam / fake names</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;color:var(--green);margin-bottom:8px;">Quality Scoring (max ~130):</div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-dim);">
+        <div>+20 Category match</div>
+        <div>+20 Data completeness 90%+</div>
+        <div>+15 Multi-source verified (3x)</div>
+        <div>+15 Small biz (1-10 staff)</div>
+        <div>+10 Website live / +10 Mobile phone</div>
+        <div>+15 50+ reviews / +8 Rating 4.5+</div>
+        <div>+10 Full address</div>
+        <div>+5 Has email / +3 LLC/Inc name</div>
+        <div style="color:var(--red);">-10 Rating &lt;3.0 / -5 VOIP phone</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;color:var(--yellow);margin-bottom:8px;">Qualification Grades:</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:var(--text-dim);">
+        <div><span style="color:var(--green);font-weight:700;">A</span> (90+) Top tier, prioritize</div>
+        <div><span style="color:var(--accent);font-weight:700;">B</span> (70-89) Strong lead</div>
+        <div><span style="color:var(--yellow);font-weight:700;">C</span> (50-69) Decent, worth outreach</div>
+        <div><span style="color:var(--orange);font-weight:700;">D</span> (30-49) Low quality</div>
+        <div><span style="color:var(--red);font-weight:700;">F</span> (&lt;30) Minimal data</div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--text-dim);">
+        Configure target/rejected categories per campaign in <a href="/settings" style="color:var(--accent);">Settings</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sample CSV -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><h3>CSV Format Example</h3><button class="btn btn-outline btn-sm" onclick="downloadSample()">Download Sample</button></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>first_name</th><th>last_name</th><th>phone</th><th>email</th><th>company_name</th><th>service_type</th><th>industry</th><th>city</th><th>state</th></tr></thead>
+      <tbody>
+        <tr><td>Mike</td><td>Torres</td><td>+15551234567</td><td>mike@greenlawnpro.com</td><td>Green Lawn Pro</td><td>Landscaping</td><td>Landscaping</td><td>Phoenix</td><td>AZ</td></tr>
+        <tr><td>David</td><td>Chen</td><td>5559876543</td><td>david@elitegrounds.com</td><td>Elite Grounds</td><td>Property Maintenance</td><td>Property Maintenance</td><td>Dallas</td><td>TX</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function fileSelected(input) {
+  const file = input.files[0];
+  if (file) {
+    document.getElementById('uploadLabel').innerHTML = '<div style="color:var(--green);">Selected: ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)</div>';
+    document.getElementById('importBtn').disabled = false;
+  }
+}
+
+// ===== CSV Import (unchanged) =====
+document.getElementById('importForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+
+  const formData = new FormData();
+  formData.append('csv', document.getElementById('csvFile').files[0]);
+  formData.append('campaign_id', document.getElementById('importCampaign').value);
+  formData.append('source', document.getElementById('importSource').value);
+
+  try {
+    const res = await fetch('/api/leads/import-csv', { method: 'POST', body: formData });
+    const data = await res.json();
+    const resultEl = document.getElementById('importResult');
+    resultEl.style.display = 'block';
+
+    if (data.success) {
+      let rejectedHtml = '';
+      if (data.summary.rejected > 0 && data.summary.rejection_reasons) {
+        const reasons = Object.entries(data.summary.rejection_reasons)
+          .sort((a,b) => b[1] - a[1])
+          .map(([r, c]) => '<div style="display:flex;justify-content:space-between;"><span>' + r + '</span><span>' + c + '</span></div>')
+          .join('');
+        rejectedHtml =
+          '<div style="margin-top:10px;padding:10px;background:rgba(249,115,22,0.1);border:1px solid var(--orange);border-radius:6px;">' +
+            '<div style="font-weight:600;color:var(--orange);margin-bottom:6px;">Filtered Out: ' + data.summary.rejected + ' low-quality leads</div>' +
+            '<div style="font-size:12px;color:var(--text-dim);">' + reasons + '</div>' +
+          '</div>';
+      }
+
+      let duplicateHtml = '';
+      if (data.summary.duplicates > 0 && data.summary.duplicate_details && data.summary.duplicate_details.length > 0) {
+        duplicateHtml = '<div style="margin-top:10px;padding:12px;background:rgba(234,179,8,0.1);border:1px solid var(--yellow);border-radius:6px;">' +
+          '<div style="font-weight:600;color:var(--yellow);margin-bottom:8px;">⚠️ ' + data.summary.duplicates + ' Duplicate Lead(s) Found</div>' +
+          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">These leads already exist in your database:</div>' +
+          '<div style="max-height:200px;overflow-y:auto;">';
+        data.summary.duplicate_details.forEach(dup => {
+          if (dup.existing_lead) {
+            duplicateHtml += '<div style="padding:6px;margin-bottom:4px;background:rgba(0,0,0,0.2);border-radius:4px;display:flex;justify-content:space-between;align-items:center;">' +
+              '<div style="flex:1;">' +
+                '<div style="font-weight:600;color:var(--text);">' + (dup.company_name || 'Unknown Company') + '</div>' +
+                '<div style="font-size:11px;color:var(--text-dim);">Matched by: ' + dup.matched_field + ' | ' + (dup.phone || dup.email || '') + '</div>' +
+              '</div>' +
+              '<a href="' + dup.existing_lead.view_url + '" class="btn btn-primary btn-sm" style="margin-left:8px;">View Lead</a>' +
+            '</div>';
+          } else if (dup.reason) {
+            duplicateHtml += '<div style="padding:6px;margin-bottom:4px;background:rgba(0,0,0,0.2);border-radius:4px;">' +
+              '<div style="font-weight:600;color:var(--text);">' + (dup.company_name || 'Unknown') + '</div>' +
+              '<div style="font-size:11px;color:var(--red);">' + dup.reason + '</div>' +
+            '</div>';
+          }
+        });
+        duplicateHtml += '</div></div>';
+      }
+
+      let gradeHtml = '';
+      if (data.summary.grade_distribution) {
+        const gColors = { A: 'var(--green)', B: 'var(--accent)', C: 'var(--yellow)', D: 'var(--orange)', F: 'var(--red)' };
+        gradeHtml = '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">';
+        ['A','B','C','D','F'].forEach(g => {
+          const count = data.summary.grade_distribution[g] || 0;
+          gradeHtml += '<div style="text-align:center;padding:8px 16px;border-radius:6px;background:rgba(0,0,0,0.2);min-width:50px;">' +
+            '<div style="font-size:18px;font-weight:700;color:' + gColors[g] + ';">' + count + '</div>' +
+            '<div style="font-size:11px;color:var(--text-dim);">Grade ' + g + '</div></div>';
+        });
+        gradeHtml += '</div>';
+      }
+
+      resultEl.innerHTML =
+        '<div style="background:#052e16;border:1px solid var(--green);border-radius:8px;padding:16px;">' +
+          '<strong style="color:var(--green);">Import Complete!</strong>' +
+          '<div style="margin-top:8px;">' +
+            '<div>Total rows: ' + data.summary.total_rows + '</div>' +
+            '<div style="color:var(--green);">Imported: ' + data.summary.imported + '</div>' +
+            (data.summary.rejected ? '<div style="color:var(--orange);">Filtered (bad quality): ' + data.summary.rejected + '</div>' : '') +
+            '<div style="color:var(--yellow);">Duplicates skipped: ' + data.summary.duplicates + '</div>' +
+            '<div style="color:var(--red);">Errors: ' + data.summary.errors + '</div>' +
+          '</div>' +
+          gradeHtml +
+          duplicateHtml +
+          rejectedHtml +
+          (data.summary.error_details.length ? '<div style="margin-top:8px;font-size:12px;color:var(--text-dim);">' + data.summary.error_details.join('<br>') + '</div>' : '') +
+          '<div style="margin-top:12px;"><a href="/leads" class="btn btn-primary btn-sm">View Leads &rarr;</a></div>' +
+        '</div>';
+    } else {
+      resultEl.innerHTML = '<div style="background:#450a0a;border:1px solid var(--red);border-radius:8px;padding:16px;color:var(--red);">' + data.error + '</div>';
+    }
+  } catch(err) {
+    document.getElementById('importResult').style.display = 'block';
+    document.getElementById('importResult').innerHTML = '<div style="color:var(--red);">Error: ' + err.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Import Leads';
+});
+
+// ===================================================================
+// ANIMATED ENRICHMENT MODAL — Step-by-step live data checking
+// ===================================================================
+const GRADE_COLORS = { A:'#22c55e', B:'#3b82f6', C:'#eab308', D:'#f97316', F:'#ef4444' };
+const GRADE_LABELS = { A:'Top Tier — Prioritize!', B:'Strong Lead', C:'Decent — Worth Outreach', D:'Low Quality', F:'Minimal Data' };
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Helper to build a step row
+function addStep(id, icon, title, subtitle) {
+  const container = document.getElementById('enrichSteps');
+  const html =
+    '<div class="enrich-step" id="step-' + id + '">' +
+      '<div class="step-icon pending" id="icon-' + id + '">' + icon + '</div>' +
+      '<div class="step-body">' +
+        '<div class="step-title" id="title-' + id + '">' + title + '</div>' +
+        '<div class="step-subtitle" id="sub-' + id + '">' + subtitle + '</div>' +
+        '<div id="data-' + id + '"></div>' +
+      '</div>' +
+    '</div>';
+  container.insertAdjacentHTML('beforeend', html);
+}
+
+// Show step with animation
+function showStep(id) {
+  const el = document.getElementById('step-' + id);
+  if (el) setTimeout(() => el.classList.add('visible'), 50);
+}
+
+// Set step state
+function setStepState(id, state, newTitle, subtitle) {
+  const iconEl = document.getElementById('icon-' + id);
+  const titleEl = document.getElementById('title-' + id);
+  const subEl = document.getElementById('sub-' + id);
+
+  iconEl.className = 'step-icon ' + state;
+
+  if (state === 'running') {
+    iconEl.innerHTML = '<div class="spinner"></div>';
+  } else if (state === 'success') {
+    iconEl.innerHTML = '&#10003;';
+  } else if (state === 'fail') {
+    iconEl.innerHTML = '&#10007;';
+  } else if (state === 'skip') {
+    iconEl.innerHTML = '—';
+  }
+
+  if (newTitle) titleEl.textContent = newTitle;
+  if (subtitle !== undefined) subEl.textContent = subtitle;
+}
+
+// Set step data card
+function setStepData(id, html) {
+  document.getElementById('data-' + id).innerHTML = '<div class="step-data">' + html + '</div>';
+}
+
+// Build data row
+function dataRow(label, value, cls) {
+  return '<div class="data-row"><span class="data-label">' + label + '</span><span class="data-value ' + (cls||'') + '">' + value + '</span></div>';
+}
+
+// Build impact badge
+function impactBadge(text, type) {
+  return '<div class="impact-badge ' + type + '">' + text + '</div>';
+}
+
+// ===== Main enrichment flow =====
+async function runEnrichment(leadData, leadId) {
+  const overlay = document.getElementById('enrichOverlay');
+  const stepsEl = document.getElementById('enrichSteps');
+  const finalEl = document.getElementById('finalReveal');
+  const actionsEl = document.getElementById('enrichActions');
+
+  // Reset
+  stepsEl.innerHTML = '';
+  finalEl.innerHTML = '';
+  finalEl.className = 'final-reveal';
+  actionsEl.style.display = 'none';
+  actionsEl.innerHTML = '';
+
+  // Set header
+  document.getElementById('enrichTitle').textContent = 'Analyzing Lead...';
+  document.getElementById('enrichSubtitle').textContent =
+    (leadData.first_name || '') + ' ' + (leadData.last_name || '') +
+    (leadData.company_name ? ' — ' + leadData.company_name : '');
+
+  overlay.classList.add('active');
+
+  // ---- Step 0: Lead Created (instant) ----
+  addStep('created', '&#128100;', 'Lead Created', 'Saved to database');
+  showStep('created');
+  await sleep(300);
+  setStepState('created', 'success', 'Lead Created', 'ID #' + leadId);
+  setStepData('created',
+    dataRow('Name', (leadData.first_name || '') + ' ' + (leadData.last_name || '')) +
+    dataRow('Company', leadData.company_name || '—') +
+    dataRow('Phone', leadData.phone || '—') +
+    dataRow('Location', [leadData.city, leadData.state].filter(Boolean).join(', ') || '—')
+  );
+  await sleep(600);
+
+  // ---- Step 1: Category Match (static) ----
+  addStep('category', '&#128218;', 'Checking Category Match...', 'Matching against campaign niche');
+  showStep('category');
+  await sleep(200);
+  setStepState('category', 'running', 'Checking Category Match...', 'Matching against campaign niche');
+  await sleep(800);
+
+  const svcType = (leadData.service_type || '').toLowerCase();
+  const industry = (leadData.industry || '').toLowerCase();
+  const hasCat = svcType || industry;
+  if (hasCat) {
+    setStepState('category', 'success', 'Category Match', 'Matched campaign target niche');
+    setStepData('category',
+      dataRow('Service Type', leadData.service_type || '—') +
+      dataRow('Industry', leadData.industry || '—') +
+      impactBadge('+20 pts', 'positive')
+    );
+  } else {
+    setStepState('category', 'fail', 'Category Match', 'No service type or industry set');
+    setStepData('category',
+      dataRow('Service Type', '—') +
+      impactBadge('+0 pts — Set service type to improve', 'neutral')
+    );
+  }
+  await sleep(500);
+
+  // ---- Step 2: Google Maps ----
+  addStep('google', '&#127758;', 'Searching Google Maps...', 'Looking up business reviews & data');
+  showStep('google');
+  await sleep(200);
+  setStepState('google', 'running', 'Searching Google Maps...', 'Querying Google Places API...');
+
+  try {
+    const gRes = await fetch('/api/enrichment/' + leadId + '/google-maps', { method: 'POST' });
+    const gData = await gRes.json();
+
+    if (gData.found) {
+      setStepState('google', 'success', 'Found on Google Maps!', 'Business listing verified');
+      let gHtml = dataRow('Business', gData.data.name || '—');
+      if (gData.data.rating) gHtml += dataRow('Rating', '&#11088; ' + gData.data.rating + '/5', gData.data.rating >= 4 ? 'green' : gData.data.rating >= 3 ? 'yellow' : 'red');
+      if (gData.data.review_count) gHtml += dataRow('Reviews', gData.data.review_count + ' reviews', gData.data.review_count > 50 ? 'green' : 'blue');
+      if (gData.data.address) gHtml += dataRow('Address', gData.data.address);
+      if (gData.data.website) gHtml += dataRow('Website', gData.data.website, 'blue');
+      if (gData.data.phone) gHtml += dataRow('Phone', gData.data.phone);
+      gHtml += impactBadge('Source 1 of 3 verified', 'positive');
+      setStepData('google', gHtml);
+    } else {
+      setStepState('google', 'fail', 'Not Found on Google Maps', gData.error || gData.message || 'No listing found');
+      setStepData('google', impactBadge('No data from Google Maps', 'neutral'));
+    }
+  } catch (err) {
+    setStepState('google', 'fail', 'Google Maps Error', err.message);
+  }
+  await sleep(500);
+
+  // ---- Step 3: Yelp ----
+  addStep('yelp', '&#11088;', 'Searching Yelp...', 'Looking up Yelp business profile');
+  showStep('yelp');
+  await sleep(200);
+  setStepState('yelp', 'running', 'Searching Yelp...', 'Querying Yelp Fusion API...');
+
+  try {
+    const yRes = await fetch('/api/enrichment/' + leadId + '/yelp', { method: 'POST' });
+    const yData = await yRes.json();
+
+    if (yData.found) {
+      setStepState('yelp', 'success', 'Found on Yelp!', 'Business profile verified');
+      let yHtml = dataRow('Business', yData.data.name || '—');
+      if (yData.data.rating) yHtml += dataRow('Rating', '&#11088; ' + yData.data.rating + '/5', yData.data.rating >= 4 ? 'green' : yData.data.rating >= 3 ? 'yellow' : 'red');
+      if (yData.data.review_count) yHtml += dataRow('Reviews', yData.data.review_count + ' reviews', yData.data.review_count > 50 ? 'green' : 'blue');
+      if (yData.data.categories) yHtml += dataRow('Categories', yData.data.categories);
+      yHtml += impactBadge('Source 2 of 3 verified', 'positive');
+      setStepData('yelp', yHtml);
+    } else {
+      setStepState('yelp', 'fail', 'Not Found on Yelp', yData.error || yData.message || 'No listing found');
+      setStepData('yelp', impactBadge('No data from Yelp', 'neutral'));
+    }
+  } catch (err) {
+    setStepState('yelp', 'fail', 'Yelp Error', err.message);
+  }
+  await sleep(500);
+
+  // ---- Step 4: Yellow Pages ----
+  addStep('yp', '&#128214;', 'Searching Yellow Pages...', 'Cross-referencing business directory');
+  showStep('yp');
+  await sleep(200);
+  setStepState('yp', 'running', 'Searching Yellow Pages...', 'Scraping yellowpages.com...');
+
+  try {
+    const ypRes = await fetch('/api/enrichment/' + leadId + '/yellowpages', { method: 'POST' });
+    const ypData = await ypRes.json();
+
+    if (ypData.found) {
+      setStepState('yp', 'success', 'Found on Yellow Pages!', 'Directory listing confirmed');
+      let ypHtml = dataRow('Business', ypData.data.name || '—');
+      if (ypData.data.address) ypHtml += dataRow('Address', ypData.data.address);
+      if (ypData.data.phone) ypHtml += dataRow('Phone', ypData.data.phone);
+      if (ypData.data.categories) ypHtml += dataRow('Categories', ypData.data.categories);
+      ypHtml += impactBadge('Source 3 of 3 verified', 'positive');
+      setStepData('yp', ypHtml);
+    } else {
+      setStepState('yp', 'fail', 'Not Found on Yellow Pages', ypData.error || ypData.message || 'No listing found');
+      setStepData('yp', impactBadge('No data from Yellow Pages', 'neutral'));
+    }
+  } catch (err) {
+    setStepState('yp', 'fail', 'Yellow Pages Error', err.message);
+  }
+  await sleep(500);
+
+  // ---- Step 5: Phone Type ----
+  addStep('phone', '&#128222;', 'Detecting Phone Type...', 'Analyzing phone line type');
+  showStep('phone');
+  await sleep(200);
+  setStepState('phone', 'running', 'Detecting Phone Type...', 'Running libphonenumber analysis...');
+
+  try {
+    const pRes = await fetch('/api/enrichment/' + leadId + '/phone-check', { method: 'POST' });
+    const pData = await pRes.json();
+
+    if (pData.checked) {
+      const pColor = pData.phone_type === 'mobile' ? 'green' : pData.phone_type === 'landline' ? 'blue' : pData.phone_type === 'voip' ? 'red' : '';
+      const pImpact = pData.phone_type === 'mobile' ? 'positive' : pData.phone_type === 'voip' ? 'negative' : 'neutral';
+      setStepState('phone', pData.phone_type === 'voip' ? 'fail' : 'success', pData.label, 'Phone: ' + pData.phone);
+      setStepData('phone',
+        dataRow('Phone Number', pData.phone) +
+        dataRow('Line Type', pData.label, pColor) +
+        impactBadge(pData.score_impact + ' pts', pImpact)
+      );
+    } else {
+      setStepState('phone', 'skip', 'Phone Check Skipped', pData.message || 'No phone number');
+    }
+  } catch (err) {
+    setStepState('phone', 'fail', 'Phone Check Error', err.message);
+  }
+  await sleep(500);
+
+  // ---- Step 6: Website Check ----
+  addStep('website', '&#127760;', 'Checking Website...', 'Verifying website is live');
+  showStep('website');
+  await sleep(200);
+  setStepState('website', 'running', 'Checking Website...', 'Sending HTTP HEAD request...');
+
+  try {
+    const wRes = await fetch('/api/enrichment/' + leadId + '/website-check', { method: 'POST' });
+    const wData = await wRes.json();
+
+    if (wData.checked) {
+      const wState = wData.live ? 'success' : 'fail';
+      setStepState('website', wState, wData.label, 'URL: ' + wData.website);
+      setStepData('website',
+        dataRow('Website', wData.website, 'blue') +
+        dataRow('Status', wData.live ? 'Live (HTTP ' + wData.status_code + ')' : 'Down / Unreachable', wData.live ? 'green' : 'red') +
+        impactBadge(wData.score_impact + ' pts', wData.live ? 'positive' : 'neutral')
+      );
+    } else {
+      setStepState('website', 'skip', 'Website Check Skipped', wData.message || 'No website URL');
+    }
+  } catch (err) {
+    setStepState('website', 'fail', 'Website Check Error', err.message);
+  }
+  await sleep(600);
+
+  // ---- Step 7: Finalize Score ----
+  addStep('finalize', '&#127942;', 'Calculating Final Score...', 'Running 22-signal quality algorithm');
+  showStep('finalize');
+  await sleep(200);
+  setStepState('finalize', 'running', 'Calculating Final Score...', 'Aggregating all enrichment data...');
+  await sleep(800);
+
+  try {
+    const fRes = await fetch('/api/enrichment/' + leadId + '/finalize', { method: 'POST' });
+    const fData = await fRes.json();
+
+    const grade = fData.qualification_grade || 'F';
+    const score = fData.quality_score || 0;
+    const comp = fData.data_completeness || 0;
+    const breakdown = fData.breakdown || [];
+    const sources = fData.source_count || 0;
+    const gColor = GRADE_COLORS[grade] || '#94a3b8';
+    const maxScore = 133;
+    const pct = Math.round((score / maxScore) * 100);
+
+    setStepState('finalize', 'success', 'Score Calculated!', sources + ' source(s) verified');
+
+    // Build signal grid
+    let signalHtml = '';
+    breakdown.forEach(function(b) {
+      const cls = b.earned > 0 ? 'pos' : (b.earned < 0 ? 'neg' : 'zero');
+      signalHtml += '<div class="signal-row">' +
+        '<span class="signal-name">' + b.signal + '</span>' +
+        '<span class="signal-pts ' + cls + '">' + (b.earned > 0 ? '+' : '') + b.earned + '</span>' +
+      '</div>';
+    });
+
+    // Show final reveal
+    await sleep(400);
+    document.getElementById('enrichTitle').textContent = 'Analysis Complete!';
+
+    finalEl.innerHTML =
+      '<div class="grade-badge-big" style="background:' + gColor + '15;border-color:' + gColor + ';color:' + gColor + ';">' + grade + '</div>' +
+      '<div style="font-size:14px;color:' + gColor + ';font-weight:700;margin-bottom:4px;">' + (GRADE_LABELS[grade] || '') + '</div>' +
+      '<div class="score-counter">' + score + ' <span class="score-max">/ ' + maxScore + '</span></div>' +
+      '<div style="font-size:12px;color:#64748b;margin-top:4px;">Data Completeness: ' + comp + '%</div>' +
+      '<div class="final-bar"><div class="final-bar-fill" id="finalBarFill" style="width:0%;background:linear-gradient(90deg,' + gColor + ',' + gColor + 'cc);"></div></div>' +
+      '<div style="font-size:12px;color:#64748b;margin-bottom:8px;">' + sources + ' source(s) verified | ' + breakdown.length + ' signals analyzed</div>' +
+      '<div class="signal-grid">' + signalHtml + '</div>';
+
+    setTimeout(() => finalEl.classList.add('visible'), 50);
+    setTimeout(() => {
+      const bar = document.getElementById('finalBarFill');
+      if (bar) bar.style.width = pct + '%';
+    }, 200);
+
+    // Show action buttons
+    actionsEl.innerHTML =
+      '<a href="/lead/' + leadId + '" class="btn btn-primary btn-sm">View Lead Detail</a>' +
+      '<button class="btn btn-outline btn-sm" onclick="closeEnrichModal()">Add Another Lead</button>';
+    actionsEl.style.display = 'flex';
+
+  } catch (err) {
+    setStepState('finalize', 'fail', 'Scoring Error', err.message);
+    actionsEl.innerHTML = '<button class="btn btn-outline btn-sm" onclick="closeEnrichModal()">Close</button>';
+    actionsEl.style.display = 'flex';
+  }
+}
+
+function closeEnrichModal() {
+  document.getElementById('enrichOverlay').classList.remove('active');
+  document.getElementById('singleForm').reset();
+}
+
+// Close modal on overlay click (outside modal)
+document.getElementById('enrichOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEnrichModal();
+});
+
+// ===== Single Lead Form Submit — triggers enrichment modal =====
+document.getElementById('singleForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Creating Lead...';
+
+  const leadPayload = {
+    first_name: document.getElementById('s_fname').value,
+    last_name: document.getElementById('s_lname').value,
+    phone: document.getElementById('s_phone').value,
+    email: document.getElementById('s_email').value,
+    company_name: document.getElementById('s_company').value,
+    service_type: document.getElementById('s_service_type').value,
+    industry: document.getElementById('s_industry').value,
+    city: document.getElementById('s_city').value,
+    state: document.getElementById('s_state').value,
+    source: 'manual',
+  };
+
+  try {
+    const res = await fetch('/api/leads', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(leadPayload),
+    });
+    const data = await res.json();
+
+    if (data.id) {
+      // Launch animated enrichment modal
+      runEnrichment(leadPayload, data.id);
+    } else if (res.status === 409 && data.existing_lead) {
+      // Duplicate lead detected - show info with link to existing lead
+      const resultEl = document.getElementById('singleResult');
+      resultEl.style.display = 'block';
+      const existing = data.existing_lead;
+      resultEl.innerHTML =
+        '<div style="background:rgba(234,179,8,0.15);border:1px solid var(--yellow);border-radius:8px;padding:16px;">' +
+          '<div style="color:var(--yellow);font-weight:700;margin-bottom:8px;">⚠️ Duplicate Lead Detected</div>' +
+          '<div style="color:var(--text);margin-bottom:12px;">' + data.message + '</div>' +
+          '<div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:6px;margin-bottom:12px;">' +
+            '<div style="font-weight:600;margin-bottom:6px;">' + (existing.company_name || 'No company name') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-dim);">' +
+              '<div>Name: ' + (existing.first_name || '') + ' ' + (existing.last_name || '') + '</div>' +
+              (existing.phone ? '<div>Phone: ' + existing.phone + '</div>' : '') +
+              (existing.email ? '<div>Email: ' + existing.email + '</div>' : '') +
+              '<div>Status: ' + existing.status + ' | Score: ' + existing.score + '</div>' +
+              '<div>Created: ' + new Date(existing.created_at).toLocaleDateString() + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<a href="' + data.view_url + '" class="btn btn-primary btn-sm">View Existing Lead →</a>' +
+        '</div>';
+    } else {
+      const resultEl = document.getElementById('singleResult');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = '<div style="background:#450a0a;border:1px solid var(--red);border-radius:8px;padding:16px;color:var(--red);">' + (data.error || 'Failed to create lead') + '</div>';
+    }
+  } catch(err) {
+    const resultEl = document.getElementById('singleResult');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div style="color:var(--red);">Error: ' + err.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Add & Analyze Lead';
+});
+
+function downloadSample() {
+  const csv = 'first_name,last_name,phone,email,company_name,service_type,industry,city,state\nMike,Torres,+15551234567,mike@greenlawnpro.com,Green Lawn Pro,Landscaping,Landscaping,Phoenix,AZ\nDavid,Chen,5559876543,david@elitegrounds.com,Elite Grounds,Property Maintenance,Property Maintenance,Dallas,TX\nJason,Rivera,5551112222,jason@sunbeltlandscaping.com,Sunbelt Landscaping,Landscaping,Landscaping,Houston,TX';
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sample_leads.csv';
+  a.click();
+}
+
+// Load campaigns
+fetch('/api/dashboard/campaigns').then(r=>r.json()).then(campaigns => {
+  const sel = document.getElementById('importCampaign');
+  sel.innerHTML = '';
+  campaigns.forEach(c => { sel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>'; });
+});
+</script>
+
+<%- include('partials/footer') %>

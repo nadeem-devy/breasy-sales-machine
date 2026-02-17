@@ -1,0 +1,287 @@
+<%- include('partials/header') %>
+
+<style>
+  .support-stats { display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+  .support-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:16px 24px; flex:1; min-width:160px; }
+  .support-stat-label { font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  .support-stat-value { font-size:28px; font-weight:700; }
+  .support-stat-value.sent { color:var(--accent); }
+  .support-stat-value.received { color:var(--green); }
+  .support-stat-value.week { color:var(--purple); }
+
+  .support-filters { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .support-filters input, .support-filters select {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:6px;
+    padding:8px 12px; color:var(--text); font-size:13px;
+  }
+  .support-filters input:focus, .support-filters select:focus { outline:none; border-color:var(--accent); }
+  .support-filters input[type="date"] { min-width:140px; }
+  .support-filters .filter-search { flex:1; min-width:200px; }
+
+  .sms-table { width:100%; border-collapse:collapse; background:var(--bg-card); border-radius:10px; overflow:hidden; border:1px solid var(--border); }
+  .sms-table th { background:var(--bg-hover); padding:10px 14px; text-align:left; font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+  .sms-table td { padding:10px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:top; }
+  .sms-table tr:last-child td { border-bottom:none; }
+  .sms-table tr:hover td { background:var(--bg-hover); }
+
+  .sms-dir { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; text-transform:uppercase; }
+  .sms-dir.outbound { background:rgba(59,130,246,0.15); color:var(--accent); }
+  .sms-dir.inbound { background:rgba(34,197,94,0.15); color:var(--green); }
+
+  .sms-status { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .sms-status.delivered { background:rgba(34,197,94,0.15); color:var(--green); }
+  .sms-status.sent { background:rgba(59,130,246,0.15); color:var(--accent); }
+  .sms-status.queued { background:rgba(168,85,247,0.15); color:var(--purple); }
+  .sms-status.failed, .sms-status.undelivered { background:rgba(239,68,68,0.15); color:var(--red); }
+  .sms-status.received { background:rgba(34,197,94,0.15); color:var(--green); }
+  .sms-status.read { background:rgba(34,197,94,0.2); color:var(--green); }
+
+  .sms-body { max-width:400px; word-break:break-word; line-height:1.4; }
+  .sms-phone { font-family:monospace; font-size:12px; white-space:nowrap; }
+  .sms-date { white-space:nowrap; font-size:12px; color:var(--text-dim); }
+  .sms-error { color:var(--red); font-size:11px; margin-top:2px; }
+
+  .sms-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:0 4px; }
+  .sms-pagination .page-info { font-size:13px; color:var(--text-dim); }
+  .sms-pagination .page-btns { display:flex; gap:8px; }
+  .sms-pagination button {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:6px;
+    padding:6px 14px; color:var(--text); cursor:pointer; font-size:13px;
+  }
+  .sms-pagination button:hover:not(:disabled) { border-color:var(--accent); }
+  .sms-pagination button:disabled { opacity:.4; cursor:not-allowed; }
+
+  .support-loading { text-align:center; padding:60px; color:var(--text-dim); font-size:14px; }
+  .support-empty { text-align:center; padding:60px; color:var(--text-dim); }
+
+  /* Message detail modal */
+  .sms-detail-overlay { position:fixed; inset:0; background:var(--overlay-bg); z-index:1000; display:flex; align-items:center; justify-content:center; }
+  .sms-detail-modal { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; padding:24px; }
+  .sms-detail-modal h3 { margin-bottom:16px; font-size:16px; }
+  .sms-detail-row { display:flex; gap:8px; margin-bottom:8px; font-size:13px; }
+  .sms-detail-row .label { color:var(--text-dim); min-width:80px; }
+  .sms-detail-body { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; margin-top:12px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .sms-detail-close { float:right; background:none; border:none; color:var(--text-dim); font-size:20px; cursor:pointer; }
+  .sms-detail-close:hover { color:var(--text); }
+
+  .btn-refresh { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:8px 16px; cursor:pointer; font-size:13px; font-weight:600; }
+  .btn-refresh:hover { background:var(--accent-hover); }
+</style>
+
+<div class="page-header">
+  <h1>App Support SMS Log</h1>
+  <button class="btn-refresh" onclick="loadAll()">Refresh</button>
+</div>
+
+<!-- Stats -->
+<div class="support-stats">
+  <div class="support-stat">
+    <div class="support-stat-label">Sent Today</div>
+    <div class="support-stat-value sent" id="statSent">-</div>
+  </div>
+  <div class="support-stat">
+    <div class="support-stat-label">Received Today</div>
+    <div class="support-stat-value received" id="statReceived">-</div>
+  </div>
+  <div class="support-stat">
+    <div class="support-stat-label">Total This Week</div>
+    <div class="support-stat-value week" id="statWeek">-</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="support-filters">
+  <input type="text" class="filter-search" id="filterSearch" placeholder="Search messages, phone numbers..." onkeyup="debounceLoad()">
+  <select id="filterDirection" onchange="resetAndLoad()">
+    <option value="">All Directions</option>
+    <option value="outbound-api">Outbound</option>
+    <option value="inbound">Inbound</option>
+  </select>
+  <input type="date" id="filterDateFrom" onchange="resetAndLoad()" title="From date">
+  <input type="date" id="filterDateTo" onchange="resetAndLoad()" title="To date">
+  <input type="text" id="filterPhone" placeholder="Filter by phone..." onkeyup="debounceLoad()" style="width:160px;">
+</div>
+
+<!-- Table -->
+<div id="tableContainer">
+  <div class="support-loading">Loading SMS messages from Twilio...</div>
+</div>
+
+<!-- Pagination -->
+<div class="sms-pagination" id="pagination" style="display:none;">
+  <div class="page-info" id="pageInfo"></div>
+  <div class="page-btns">
+    <button id="btnPrev" onclick="prevPage()" disabled>Previous</button>
+    <button id="btnNext" onclick="nextPage()">Next</button>
+  </div>
+</div>
+
+<script>
+let currentPage = 0;
+const PAGE_SIZE = 50;
+let totalMessages = 0;
+let debounceTimer;
+let cachedMessages = [];
+
+function debounceLoad() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => { currentPage = 0; loadMessages(); }, 400);
+}
+
+function resetAndLoad() {
+  currentPage = 0;
+  loadMessages();
+}
+
+// ========== Stats ==========
+async function loadStats() {
+  try {
+    const res = await fetch('/api/app-support/stats');
+    const data = await res.json();
+    document.getElementById('statSent').textContent = data.sent_today ?? '-';
+    document.getElementById('statReceived').textContent = data.received_today ?? '-';
+    document.getElementById('statWeek').textContent = data.total_week ?? '-';
+  } catch(e) {
+    console.error('Stats error:', e);
+  }
+}
+
+// ========== Messages ==========
+async function loadMessages() {
+  const container = document.getElementById('tableContainer');
+  const pagination = document.getElementById('pagination');
+
+  const search = document.getElementById('filterSearch').value.trim();
+  const direction = document.getElementById('filterDirection').value;
+  const dateFrom = document.getElementById('filterDateFrom').value;
+  const dateTo = document.getElementById('filterDateTo').value;
+  const phone = document.getElementById('filterPhone').value.trim();
+
+  let url = `/api/app-support/messages?page=${currentPage}&limit=${PAGE_SIZE}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  if (direction) url += `&direction=${encodeURIComponent(direction)}`;
+  if (dateFrom) url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+  if (dateTo) url += `&dateTo=${encodeURIComponent(dateTo)}`;
+  if (phone) url += `&phone=${encodeURIComponent(phone)}`;
+
+  container.innerHTML = '<div class="support-loading">Loading...</div>';
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error && !data.messages) {
+      container.innerHTML = `<div class="support-empty">Error: ${escapeHtml(data.error)}</div>`;
+      pagination.style.display = 'none';
+      return;
+    }
+
+    totalMessages = data.total || 0;
+    const messages = data.messages || [];
+    cachedMessages = messages;
+
+    if (!messages.length) {
+      container.innerHTML = '<div class="support-empty">No SMS messages found. Messages sent via your Twilio number will appear here.</div>';
+      pagination.style.display = 'none';
+      return;
+    }
+
+    let html = `<table class="sms-table">
+      <thead><tr>
+        <th>Direction</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Message</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr></thead><tbody>`;
+
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      const dir = m.direction || '';
+      const dirClass = dir.includes('outbound') ? 'outbound' : 'inbound';
+      const dirLabel = dir.includes('outbound') ? 'Outbound' : 'Inbound';
+      const statusClass = (m.status || '').replace(/[^a-z]/g, '');
+      const date = m.date_sent ? new Date(m.date_sent).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '-';
+      const body = (m.body || '').substring(0, 120) + ((m.body || '').length > 120 ? '...' : '');
+      const errorHtml = m.error_code ? `<div class="sms-error">Error ${m.error_code}: ${escapeHtml(m.error_message || '')}</div>` : '';
+
+      html += `<tr onclick="showDetail(${i})" style="cursor:pointer;">
+        <td><span class="sms-dir ${dirClass}">${dirLabel}</span></td>
+        <td class="sms-phone">${escapeHtml(m.from || '')}</td>
+        <td class="sms-phone">${escapeHtml(m.to || '')}</td>
+        <td class="sms-body">${escapeHtml(body)}${errorHtml}</td>
+        <td><span class="sms-status ${statusClass}">${escapeHtml(m.status || '')}</span></td>
+        <td class="sms-date">${date}</td>
+      </tr>`;
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // Pagination
+    const start = currentPage * PAGE_SIZE + 1;
+    const end = Math.min(start + messages.length - 1, totalMessages);
+    document.getElementById('pageInfo').textContent = `Showing ${start}-${end} of ${totalMessages}`;
+    document.getElementById('btnPrev').disabled = currentPage === 0;
+    document.getElementById('btnNext').disabled = end >= totalMessages;
+    pagination.style.display = 'flex';
+
+  } catch(e) {
+    console.error('Load messages error:', e);
+    container.innerHTML = '<div class="support-empty">Failed to load messages. Check Twilio configuration in Settings.</div>';
+    pagination.style.display = 'none';
+  }
+}
+
+function prevPage() { if (currentPage > 0) { currentPage--; loadMessages(); } }
+function nextPage() { currentPage++; loadMessages(); }
+
+// ========== Detail Modal ==========
+function showDetail(index) {
+  const msg = cachedMessages[index];
+  if (!msg) return;
+  const dir = (msg.direction || '').includes('outbound') ? 'Outbound' : 'Inbound';
+  const date = msg.date_sent ? new Date(msg.date_sent).toLocaleString() : '-';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'sms-detail-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `
+    <div class="sms-detail-modal">
+      <button class="sms-detail-close" onclick="this.closest('.sms-detail-overlay').remove()">&times;</button>
+      <h3>SMS Detail</h3>
+      <div class="sms-detail-row"><span class="label">Direction</span><span>${dir}</span></div>
+      <div class="sms-detail-row"><span class="label">From</span><span style="font-family:monospace;">${escapeHtml(msg.from || '')}</span></div>
+      <div class="sms-detail-row"><span class="label">To</span><span style="font-family:monospace;">${escapeHtml(msg.to || '')}</span></div>
+      <div class="sms-detail-row"><span class="label">Status</span><span>${escapeHtml(msg.status || '')}</span></div>
+      <div class="sms-detail-row"><span class="label">Date</span><span>${date}</span></div>
+      <div class="sms-detail-row"><span class="label">SID</span><span style="font-size:11px;word-break:break-all;">${escapeHtml(msg.sid || '')}</span></div>
+      <div class="sms-detail-row"><span class="label">Segments</span><span>${msg.num_segments || '-'}</span></div>
+      ${msg.price ? `<div class="sms-detail-row"><span class="label">Cost</span><span>$${Math.abs(parseFloat(msg.price)).toFixed(4)}</span></div>` : ''}
+      ${msg.error_code ? `<div class="sms-detail-row"><span class="label">Error</span><span style="color:var(--red);">${msg.error_code}: ${escapeHtml(msg.error_message || '')}</span></div>` : ''}
+      <div class="sms-detail-body">${escapeHtml(msg.body || '(empty)')}</div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+// ========== Helpers ==========
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ========== Init ==========
+function loadAll() {
+  loadStats();
+  loadMessages();
+}
+
+loadAll();
+</script>
+
+<%- include('partials/footer') %>

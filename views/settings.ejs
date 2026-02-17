@@ -1,0 +1,663 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Settings</h1>
+</div>
+
+<!-- Telephony Provider Selector -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h3>Telephony Provider</h3></div>
+  <div style="padding:0 16px 16px;">
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px;">
+      Choose which provider handles SMS and manual calls. Switch to Dialpad if Twilio is down or unavailable.
+    </p>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 20px;border:2px solid var(--border);border-radius:8px;" id="provider-twilio-label">
+        <input type="radio" name="telephony_provider" value="twilio" id="provider-twilio" onchange="switchProvider('twilio')">
+        <strong>Twilio</strong>
+        <span style="font-size:11px;color:var(--text-dim);">(SMS + Calls)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 20px;border:2px solid var(--border);border-radius:8px;" id="provider-dialpad-label">
+        <input type="radio" name="telephony_provider" value="dialpad" id="provider-dialpad" onchange="switchProvider('dialpad')">
+        <strong>Dialpad</strong>
+        <span style="font-size:11px;color:var(--text-dim);">(Fallback SMS + Calls)</span>
+      </label>
+    </div>
+    <div id="provider-status" style="margin-top:8px;font-size:12px;"></div>
+  </div>
+</div>
+
+<!-- API Integrations -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h3>API Integrations</h3></div>
+
+  <div class="grid-2" style="gap:24px;">
+    <!-- Twilio -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">Twilio <span style="font-size:11px;color:var(--text-dim);">(SMS + Calls)</span></h4>
+        <span class="badge" id="twilio-status">Not tested</span>
+      </div>
+      <div class="form-group"><label>Account SID</label><input type="text" id="set-twilio_account_sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+      <div class="form-group"><label>Auth Token</label><input type="password" id="set-twilio_auth_token" placeholder="Your auth token"></div>
+      <div class="form-group"><label>Phone Numbers <span style="color:var(--text-dim);font-size:11px;">(comma-separated)</span></label><input type="text" id="set-twilio_phone_numbers" placeholder="+15551234567,+15551234568"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('twilio')">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="testIntegration('twilio')">Test Connection</button>
+      </div>
+      <div id="twilio-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <!-- Dialpad -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">Dialpad <span style="font-size:11px;color:var(--text-dim);">(SMS + Calls Fallback)</span></h4>
+        <span class="badge" id="dialpad-status">Not configured</span>
+      </div>
+      <div class="form-group"><label>API Key</label><input type="password" id="set-dialpad_api_key" placeholder="Your Dialpad API key"></div>
+      <div class="form-group"><label>API Secret</label><input type="password" id="set-dialpad_api_secret" placeholder="Your Dialpad API secret"></div>
+      <div class="form-group"><label>Phone Numbers <span style="color:var(--text-dim);font-size:11px;">(comma-separated)</span></label><input type="text" id="set-dialpad_phone_numbers" placeholder="+15551234567"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('dialpad')">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="testIntegration('dialpad')">Test Connection</button>
+        <button class="btn btn-outline btn-sm" onclick="syncDialpad()">Sync Now</button>
+      </div>
+      <div id="dialpad-result" style="margin-top:8px;font-size:12px;"></div>
+      <div id="dialpad-sync-info" style="margin-top:6px;font-size:11px;color:var(--text-dim);"></div>
+    </div>
+
+    <!-- SendGrid -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">SendGrid <span style="font-size:11px;color:var(--text-dim);">(Email)</span></h4>
+        <span class="badge" id="sendgrid-status">Not tested</span>
+      </div>
+      <div class="form-group"><label>API Key</label><input type="password" id="set-sendgrid_api_key" placeholder="SG.xxxxxxxxxxxxxxxxxxxx"></div>
+      <div class="form-group"><label>From Email</label><input type="email" id="set-sendgrid_from_email" placeholder="nadeem@breasy.com"></div>
+      <div class="form-group"><label>From Name</label><input type="text" id="set-sendgrid_from_name" placeholder="Nadeem from Breasy"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('sendgrid')">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="testIntegration('sendgrid')">Test Connection</button>
+      </div>
+      <div id="sendgrid-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <!-- Vapi -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">Vapi <span style="font-size:11px;color:var(--text-dim);">(AI Voice Calls)</span></h4>
+        <span class="badge" id="vapi-status">Not tested</span>
+      </div>
+      <div class="form-group"><label>API Key</label><input type="password" id="set-vapi_api_key" placeholder="Your Vapi API key"></div>
+      <div class="form-group"><label>Assistant ID</label><input type="text" id="set-vapi_assistant_id" placeholder="asst_xxxxxxxxxxxxx"></div>
+      <div class="form-group"><label>Phone Number ID</label><input type="text" id="set-vapi_phone_number_id" placeholder="Your Vapi phone number ID"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('vapi')">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="testIntegration('vapi')">Test Connection</button>
+      </div>
+      <div id="vapi-result" style="margin-top:8px;font-size:12px;"></div>
+
+      <!-- Inbound Receptionist Section -->
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <h4 style="margin:0 0 8px 0;font-size:13px;">Inbound Receptionist <span style="font-size:11px;color:var(--text-dim);">(AI answers calls, routes to David)</span></h4>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">
+          When someone calls your Vapi number, the AI greets them, asks if they want to talk to David, and offers to explain Breasy. Transfers to David's number automatically.
+        </p>
+        <div class="form-group"><label>Transfer Number <span style="color:var(--text-dim);font-size:11px;">(David's direct line)</span></label><input type="text" id="set-vapi_transfer_number" value="+15102201987" placeholder="+15551234567"></div>
+        <div class="form-group"><label>Inbound Assistant ID <span style="color:var(--text-dim);font-size:11px;">(auto-generated on deploy)</span></label><input type="text" id="set-vapi_inbound_assistant_id" placeholder="Will be created automatically" readonly style="opacity:0.7;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="deployInbound()">Deploy Inbound Assistant</button>
+        </div>
+        <div id="inbound-result" style="margin-top:8px;font-size:12px;"></div>
+      </div>
+    </div>
+
+    <!-- HubSpot -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">HubSpot <span style="font-size:11px;color:var(--text-dim);">(CRM Sync)</span></h4>
+        <span class="badge" id="hubspot-status">Not tested</span>
+      </div>
+      <div class="form-group"><label>API Key / Private App Token</label><input type="password" id="set-hubspot_api_key" placeholder="pat-xxxxxxxxxxxxx"></div>
+      <div class="form-group"><label>Portal ID</label><input type="text" id="set-hubspot_portal_id" placeholder="12345678"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('hubspot')">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="testIntegration('hubspot')">Test Connection</button>
+      </div>
+      <div id="hubspot-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <!-- Google Places -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">Google Places <span style="font-size:11px;color:var(--text-dim);">(Maps Scraping)</span></h4>
+        <span class="badge" id="google-status">Not configured</span>
+      </div>
+      <div class="form-group"><label>API Key</label><input type="password" id="set-google_places_api_key" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('google')">Save</button>
+      </div>
+      <div id="google-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <!-- Yelp -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;">Yelp <span style="font-size:11px;color:var(--text-dim);">(Business Scraping)</span></h4>
+        <span class="badge" id="yelp-status">Not configured</span>
+      </div>
+      <div class="form-group"><label>Fusion API Key</label><input type="password" id="set-yelp_api_key" placeholder="Your Yelp Fusion API key"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntegration('yelp')">Save</button>
+      </div>
+      <div id="yelp-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Ad Platforms -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h3>Ad Platforms</h3></div>
+  <p style="color:var(--text-dim);font-size:13px;padding:0 16px;">Connect your ad platform accounts to launch and manage campaigns from Breasy.</p>
+  <div class="grid-2" style="gap:16px;padding:0 16px 16px;">
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="margin:0;color:#1877f2;">Facebook / Instagram</h4>
+        <span class="badge" id="ad-meta-status">Not connected</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Uses Meta Marketing API. Connects both Facebook and Instagram.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" id="ad-meta-connect" onclick="connectAdPlatform('facebook')">Connect</button>
+        <button class="btn btn-outline btn-sm" id="ad-meta-disconnect" style="display:none;" onclick="disconnectAdPlatform('facebook')">Disconnect</button>
+      </div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="margin:0;color:#4285f4;">Google Ads</h4>
+        <span class="badge" id="ad-google-status">Not connected</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Search, Display, and Lead Form Extension ads.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" id="ad-google-connect" onclick="connectAdPlatform('google')">Connect</button>
+        <button class="btn btn-outline btn-sm" id="ad-google-disconnect" style="display:none;" onclick="disconnectAdPlatform('google')">Disconnect</button>
+      </div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="margin:0;color:#0a66c2;">LinkedIn</h4>
+        <span class="badge" id="ad-linkedin-status">Not connected</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Sponsored content with Lead Gen forms.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" id="ad-linkedin-connect" onclick="connectAdPlatform('linkedin')">Connect</button>
+        <button class="btn btn-outline btn-sm" id="ad-linkedin-disconnect" style="display:none;" onclick="disconnectAdPlatform('linkedin')">Disconnect</button>
+      </div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="margin:0;color:#ff4500;">Reddit</h4>
+        <span class="badge" id="ad-reddit-status">Not connected</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Client credentials auth. Enter your Reddit app ID and secret.</p>
+      <div class="form-group" style="margin-bottom:8px;"><input type="text" id="reddit-client-id" placeholder="Reddit Client ID" style="font-size:12px;"></div>
+      <div class="form-group" style="margin-bottom:8px;"><input type="password" id="reddit-client-secret" placeholder="Reddit Client Secret" style="font-size:12px;"></div>
+      <div class="form-group" style="margin-bottom:8px;"><input type="text" id="reddit-account-id" placeholder="Reddit Ad Account ID" style="font-size:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveRedditAuth()">Save</button>
+        <button class="btn btn-outline btn-sm" id="ad-reddit-disconnect" style="display:none;" onclick="disconnectAdPlatform('reddit')">Disconnect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Links Configuration -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h3>Links & URLs</h3></div>
+  <div class="grid-3">
+    <div class="form-group"><label>Meeting Booking URL</label><input type="url" id="set-meeting_base_url" placeholder="https://calendly.com/breasy/demo"></div>
+    <div class="form-group"><label>App Download URL</label><input type="url" id="set-app_download_base_url" placeholder="https://breasy.app.link"></div>
+    <div class="form-group"><label>Video Demo URL</label><input type="url" id="set-video_base_url" placeholder="https://breasy.com/demo"></div>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="saveSettings(['meeting_base_url','app_download_base_url','video_base_url'])">Save Links</button>
+</div>
+
+<div class="grid-2">
+  <!-- Daily Limits -->
+  <div class="card">
+    <div class="card-header"><h3>Daily Limits</h3></div>
+    <div class="form-group"><label>SMS per day</label><input type="number" id="set-sms_daily_limit" value="200"></div>
+    <div class="form-group"><label>Emails per day</label><input type="number" id="set-email_daily_limit" value="500"></div>
+    <div class="form-group"><label>AI Calls per day</label><input type="number" id="set-calls_daily_limit" value="75"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveSettings(['sms_daily_limit','email_daily_limit','calls_daily_limit'])">Save Limits</button>
+  </div>
+
+  <!-- Send Windows -->
+  <div class="card">
+    <div class="card-header"><h3>Send Windows</h3></div>
+    <div class="grid-2" style="gap:10px;">
+      <div class="form-group"><label>SMS Start Hour</label><input type="number" id="set-sms_window_start" min="0" max="23" value="9"></div>
+      <div class="form-group"><label>SMS End Hour</label><input type="number" id="set-sms_window_end" min="0" max="23" value="20"></div>
+      <div class="form-group"><label>Email Start Hour</label><input type="number" id="set-email_window_start" min="0" max="23" value="8"></div>
+      <div class="form-group"><label>Email End Hour</label><input type="number" id="set-email_window_end" min="0" max="23" value="21"></div>
+      <div class="form-group"><label>Call Start Hour</label><input type="number" id="set-call_window_start" min="0" max="23" value="10"></div>
+      <div class="form-group"><label>Call End Hour</label><input type="number" id="set-call_window_end" min="0" max="23" value="17"></div>
+    </div>
+    <div class="form-group"><label>Timezone</label><input type="text" id="set-send_timezone" value="America/New_York"></div>
+    <div class="form-group"><label>Sender Name</label><input type="text" id="set-sender_name" value="Nadeem"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveSettings(['sms_window_start','sms_window_end','email_window_start','email_window_end','call_window_start','call_window_end','send_timezone','sender_name'])">Save Windows</button>
+  </div>
+
+  <!-- System Control -->
+  <div class="card">
+    <div class="card-header"><h3>System Control</h3></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <strong>System Status:</strong>
+        <span id="systemStatus" class="badge" style="margin-left:8px;">Checking...</span>
+      </div>
+      <button class="btn btn-danger" id="pauseSystemBtn" onclick="togglePause()">Pause All Outreach</button>
+      <button class="btn btn-warning btn-sm" onclick="runSchedulerNow()">Run Scheduler Manually</button>
+      <hr style="border-color:var(--border);">
+      <div>
+        <strong>Health Check</strong>
+        <div id="healthInfo" style="margin-top:8px;font-size:13px;color:var(--text-dim);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaigns -->
+  <div class="card">
+    <div class="card-header"><h3>Campaigns</h3><button class="btn btn-primary btn-sm" onclick="createCampaign()">New Campaign</button></div>
+    <div id="campaignList"></div>
+  </div>
+</div>
+
+<!-- Templates -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><h3>Message Templates</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Channel</th><th>Version</th><th>Sends</th><th>Replies</th><th>Reply Rate</th><th>Opens</th><th>Clicks</th></tr></thead>
+      <tbody id="templateTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function loadSettings() {
+  const res = await fetch('/api/dashboard/settings');
+  const settings = await res.json();
+  settings.forEach(s => {
+    const el = document.getElementById('set-' + s.key);
+    if (el) {
+      if (el.type === 'password' && !s.value) return;
+      el.value = s.value;
+    }
+  });
+
+  // System paused status
+  const paused = settings.find(s => s.key === 'system_paused');
+  const isPaused = paused && paused.value === '1';
+  document.getElementById('systemStatus').textContent = isPaused ? 'PAUSED' : 'ACTIVE';
+  document.getElementById('systemStatus').className = 'badge ' + (isPaused ? 'badge-hot' : 'badge-qualified');
+  document.getElementById('pauseSystemBtn').textContent = isPaused ? 'Resume System' : 'Pause All Outreach';
+  document.getElementById('pauseSystemBtn').className = isPaused ? 'btn btn-success' : 'btn btn-danger';
+
+  // Telephony provider selector
+  var providerSetting = settings.find(s => s.key === 'telephony_provider');
+  var activeProvider = (providerSetting && providerSetting.value) || 'twilio';
+  var providerRadio = document.getElementById('provider-' + activeProvider);
+  if (providerRadio) providerRadio.checked = true;
+  highlightActiveProvider(activeProvider);
+
+  // Connection status badges
+  updateStatusBadge('twilio', settings.find(s => s.key === 'twilio_account_sid')?.value);
+  updateStatusBadge('dialpad', settings.find(s => s.key === 'dialpad_api_key')?.value);
+  updateStatusBadge('sendgrid', settings.find(s => s.key === 'sendgrid_api_key')?.value);
+  updateStatusBadge('vapi', settings.find(s => s.key === 'vapi_api_key')?.value);
+  updateStatusBadge('hubspot', settings.find(s => s.key === 'hubspot_api_key')?.value);
+  updateStatusBadge('google', settings.find(s => s.key === 'google_places_api_key')?.value);
+  updateStatusBadge('yelp', settings.find(s => s.key === 'yelp_api_key')?.value);
+
+  // Health check
+  const hRes = await fetch('/health');
+  const health = await hRes.json();
+  document.getElementById('healthInfo').innerHTML =
+    'Status: <span style="color:var(--green)">' + health.status + '</span><br>' +
+    'Leads in DB: ' + health.leads + '<br>' +
+    'Activities logged: ' + health.activities + '<br>' +
+    'Uptime: ' + Math.floor(health.uptime/60) + ' minutes';
+
+  // Dialpad last sync info
+  var lastSync = settings.find(s => s.key === 'dialpad_last_sync');
+  var syncInfoEl = document.getElementById('dialpad-sync-info');
+  if (syncInfoEl) {
+    syncInfoEl.textContent = lastSync && lastSync.value
+      ? 'Last synced: ' + new Date(lastSync.value).toLocaleString()
+      : 'Never synced. Click "Sync Now" to pull Dialpad activity.';
+  }
+
+  // Campaigns
+  const cRes = await fetch('/api/dashboard/campaigns');
+  const campaigns = await cRes.json();
+  document.getElementById('campaignList').innerHTML = campaigns.map(c =>
+    '<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><strong>' + c.name + '</strong>' +
+        '<span class="badge ' + (c.is_active ? 'badge-qualified' : 'badge-cold') + '" style="margin-left:8px;">' + (c.is_active ? 'Active' : 'Inactive') + '</span>' +
+        (c.niche_name && c.niche_name !== 'General' ? '<span style="margin-left:8px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,0.15);color:var(--accent);font-size:11px;">' + c.niche_name + '</span>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;">' +
+          '<span style="color:var(--text-dim);">' + c.total_leads + ' leads / ' + c.total_qualified + ' qualified</span>' +
+          '<button class="btn btn-outline btn-sm" onclick="toggleNicheConfig(' + c.id + ')" style="font-size:11px;">Niche Config</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="niche-config-' + c.id + '" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;">' +
+        '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px;">' +
+          '<div class="form-group" style="margin:0;"><label style="font-size:12px;">Niche Name</label>' +
+            '<input type="text" id="niche-name-' + c.id + '" value="' + (c.niche_name || 'General') + '" style="font-size:12px;"></div>' +
+          '<div style="font-size:11px;color:var(--text-dim);padding-top:24px;">This label appears on the campaign badge and scrape results.</div>' +
+        '</div>' +
+        '<div class="form-group" style="margin:0 0 10px 0;"><label style="font-size:12px;">Target Categories <span style="color:var(--text-dim);">(comma-separated)</span></label>' +
+          '<textarea id="niche-target-' + c.id + '" rows="3" style="font-size:12px;">' + (c.target_categories || '') + '</textarea></div>' +
+        '<div class="form-group" style="margin:0 0 10px 0;"><label style="font-size:12px;">Rejected Categories <span style="color:var(--text-dim);">(comma-separated)</span></label>' +
+          '<textarea id="niche-rejected-' + c.id + '" rows="2" style="font-size:12px;">' + (c.rejected_categories || '') + '</textarea></div>' +
+        '<button class="btn btn-primary btn-sm" onclick="saveNicheConfig(' + c.id + ')">Save Niche Config</button>' +
+      '</div>' +
+    '</div>'
+  ).join('') || '<div class="empty">No campaigns</div>';
+
+  // Templates
+  const tRes = await fetch('/api/dashboard/analytics?days=30');
+  const analytics = await tRes.json();
+  const tbody = document.getElementById('templateTable');
+  if (analytics.abTests.length) {
+    tbody.innerHTML = analytics.abTests.map(t =>
+      '<tr><td>' + t.name + '</td>' +
+      '<td><span class="badge badge-' + (t.name.includes('SMS') ? 'contacted' : 'engaged') + '">' + (t.name.includes('SMS') ? 'SMS' : 'Email') + '</span></td>' +
+      '<td>' + t.version + '</td><td>' + t.send_count + '</td><td>' + t.reply_count + '</td>' +
+      '<td style="font-weight:600">' + t.reply_rate + '%</td><td>' + t.open_count + '</td><td>' + t.click_count + '</td></tr>'
+    ).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim);">No template data yet.</td></tr>';
+  }
+}
+
+function updateStatusBadge(service, value) {
+  var el = document.getElementById(service + '-status');
+  if (!el) return;
+  if (value) { el.textContent = 'Configured'; el.className = 'badge badge-warm'; }
+  else { el.textContent = 'Not configured'; el.className = 'badge badge-cold'; }
+}
+
+async function saveSettings(keys) {
+  var data = {};
+  for (var i = 0; i < keys.length; i++) {
+    data[keys[i]] = document.getElementById('set-' + keys[i]).value;
+  }
+  await fetch('/api/dashboard/settings/bulk', {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data),
+  });
+  alert('Settings saved!');
+  loadSettings();
+}
+
+async function syncDialpad() {
+  var resultEl = document.getElementById('dialpad-result');
+  var syncInfoEl = document.getElementById('dialpad-sync-info');
+  resultEl.innerHTML = '<span style="color:var(--text-dim);">Syncing Dialpad activity...</span>';
+  try {
+    var res = await fetch('/api/dashboard/sync-dialpad', { method: 'POST' });
+    var data = await res.json();
+    if (data.success) {
+      resultEl.innerHTML = '<span style="color:var(--green);">Synced ' + data.calls_synced + ' calls, ' + data.sms_synced + ' SMS</span>';
+      syncInfoEl.textContent = 'Last synced: ' + new Date().toLocaleString();
+    } else {
+      resultEl.innerHTML = '<span style="color:var(--red);">' + (data.error || 'Sync failed') + '</span>';
+    }
+  } catch(e) {
+    resultEl.innerHTML = '<span style="color:var(--red);">Error: ' + e.message + '</span>';
+  }
+}
+
+async function switchProvider(provider) {
+  await fetch('/api/dashboard/settings/bulk', {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ telephony_provider: provider }),
+  });
+  document.getElementById('provider-status').innerHTML =
+    '<span style="color:var(--green);">Switched to ' + provider.charAt(0).toUpperCase() + provider.slice(1) + '!</span>';
+  highlightActiveProvider(provider);
+}
+
+function highlightActiveProvider(provider) {
+  document.getElementById('provider-twilio-label').style.borderColor =
+    provider === 'twilio' ? 'var(--primary)' : 'var(--border)';
+  document.getElementById('provider-dialpad-label').style.borderColor =
+    provider === 'dialpad' ? 'var(--primary)' : 'var(--border)';
+}
+
+async function saveIntegration(service) {
+  var keyMap = {
+    twilio: ['twilio_account_sid', 'twilio_auth_token', 'twilio_phone_numbers'],
+    dialpad: ['dialpad_api_key', 'dialpad_api_secret', 'dialpad_phone_numbers'],
+    sendgrid: ['sendgrid_api_key', 'sendgrid_from_email', 'sendgrid_from_name'],
+    vapi: ['vapi_api_key', 'vapi_assistant_id', 'vapi_phone_number_id'],
+    hubspot: ['hubspot_api_key', 'hubspot_portal_id'],
+    google: ['google_places_api_key'],
+    yelp: ['yelp_api_key'],
+  };
+  var keys = keyMap[service];
+  var data = {};
+  for (var i = 0; i < keys.length; i++) {
+    data[keys[i]] = document.getElementById('set-' + keys[i]).value;
+  }
+  await fetch('/api/dashboard/settings/bulk', {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data),
+  });
+  var statusEl = document.getElementById(service + '-status');
+  statusEl.textContent = 'Saved'; statusEl.className = 'badge badge-warm';
+  document.getElementById(service + '-result').innerHTML = '<span style="color:var(--green);">Saved successfully.</span>';
+}
+
+async function testIntegration(service) {
+  var resultEl = document.getElementById(service + '-result');
+  var statusEl = document.getElementById(service + '-status');
+  resultEl.innerHTML = '<span style="color:var(--text-dim);">Testing...</span>';
+  try {
+    var res = await fetch('/api/dashboard/test-' + service, { method: 'POST' });
+    var data = await res.json();
+    if (data.success) {
+      resultEl.innerHTML = '<span style="color:var(--green);">' + data.message + '</span>';
+      statusEl.textContent = 'Connected'; statusEl.className = 'badge badge-qualified';
+    } else {
+      resultEl.innerHTML = '<span style="color:var(--red);">Failed: ' + data.error + '</span>';
+      statusEl.textContent = 'Error'; statusEl.className = 'badge badge-hot';
+    }
+  } catch(e) {
+    resultEl.innerHTML = '<span style="color:var(--red);">Error: ' + e.message + '</span>';
+    statusEl.textContent = 'Error'; statusEl.className = 'badge badge-hot';
+  }
+}
+
+async function togglePause() {
+  var res = await fetch('/api/dashboard/settings');
+  var settings = await res.json();
+  var paused = settings.find(function(s){ return s.key === 'system_paused'; });
+  var isPaused = paused && paused.value === '1';
+  if (isPaused) {
+    await fetch('/api/dashboard/resume-system', { method: 'POST' });
+  } else {
+    if (!confirm('PAUSE all outreach? No SMS, emails, or calls will be sent until resumed.')) return;
+    await fetch('/api/dashboard/pause-system', { method: 'POST' });
+  }
+  loadSettings();
+}
+
+async function runSchedulerNow() {
+  var res = await fetch('/api/dashboard/run-scheduler', { method: 'POST' });
+  var d = await res.json();
+  alert('Scheduler: ' + d.processed + ' processed, ' + (d.skipped||0) + ' skipped, ' + (d.errors||0) + ' errors');
+}
+
+async function createCampaign() {
+  var name = prompt('Campaign name:');
+  if (!name) return;
+  await fetch('/api/dashboard/campaigns', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name: name }),
+  });
+  loadSettings();
+}
+
+function toggleNicheConfig(campaignId) {
+  var el = document.getElementById('niche-config-' + campaignId);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveNicheConfig(campaignId) {
+  try {
+    await fetch('/api/dashboard/campaigns/' + campaignId + '/niche', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        niche_name: document.getElementById('niche-name-' + campaignId).value,
+        target_categories: document.getElementById('niche-target-' + campaignId).value,
+        rejected_categories: document.getElementById('niche-rejected-' + campaignId).value,
+      }),
+    });
+    alert('Niche config saved!');
+    loadSettings();
+  } catch (e) {
+    alert('Error saving niche config: ' + e.message);
+  }
+}
+
+async function deployInbound() {
+  var resultEl = document.getElementById('inbound-result');
+  var transferNumber = document.getElementById('set-vapi_transfer_number').value;
+  if (!transferNumber) { alert('Enter the transfer number (David\'s number)'); return; }
+
+  resultEl.innerHTML = '<span style="color:var(--text-dim);">Deploying inbound assistant...</span>';
+  try {
+    var res = await fetch('/api/dashboard/deploy-inbound-assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transfer_number: transferNumber }),
+    });
+    var data = await res.json();
+    if (data.success) {
+      document.getElementById('set-vapi_inbound_assistant_id').value = data.assistantId;
+      var msg = data.message;
+      if (data.phoneAttached) msg += ' &amp; attached to phone number';
+      if (data.warning) msg += '<br><span style="color:var(--orange);">' + data.warning + '</span>';
+      resultEl.innerHTML = '<span style="color:var(--green);">' + msg + '</span>';
+    } else {
+      resultEl.innerHTML = '<span style="color:var(--red);">Failed: ' + data.error + '</span>';
+    }
+  } catch(e) {
+    resultEl.innerHTML = '<span style="color:var(--red);">Error: ' + e.message + '</span>';
+  }
+}
+
+loadSettings();
+loadAdPlatformStatus();
+
+async function loadAdPlatformStatus() {
+  const platforms = ['facebook', 'google', 'linkedin', 'reddit'];
+  for (const p of platforms) {
+    try {
+      const res = await fetch('/api/ad-campaigns/auth/' + p);
+      const data = await res.json();
+      const key = p === 'facebook' ? 'meta' : p;
+      const statusEl = document.getElementById('ad-' + key + '-status');
+      const connectBtn = document.getElementById('ad-' + key + '-connect');
+      const disconnectBtn = document.getElementById('ad-' + key + '-disconnect');
+      if (data.connected) {
+        if (statusEl) { statusEl.textContent = 'Connected'; statusEl.className = 'badge badge-qualified'; }
+        if (connectBtn) connectBtn.style.display = 'none';
+        if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+      }
+    } catch(e) { /* skip */ }
+  }
+}
+
+function connectAdPlatform(platform) {
+  var baseUrl = window.location.origin;
+  var redirectUri = encodeURIComponent(baseUrl + '/api/ad-campaigns/auth/' + platform + '/callback');
+  var url;
+
+  if (platform === 'facebook' || platform === 'instagram') {
+    // Need META_APP_ID in a prompt or from settings
+    var appId = prompt('Enter your Meta App ID:');
+    if (!appId) return;
+    url = 'https://www.facebook.com/v21.0/dialog/oauth?client_id=' + appId +
+      '&redirect_uri=' + redirectUri +
+      '&scope=ads_management,leads_retrieval,pages_read_engagement' +
+      '&response_type=code';
+  } else if (platform === 'google') {
+    var clientId = prompt('Enter your Google Ads Client ID:');
+    if (!clientId) return;
+    url = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=' + clientId +
+      '&redirect_uri=' + redirectUri +
+      '&scope=https://www.googleapis.com/auth/adwords' +
+      '&response_type=code&access_type=offline&prompt=consent';
+  } else if (platform === 'linkedin') {
+    var clientId = prompt('Enter your LinkedIn Client ID:');
+    if (!clientId) return;
+    url = 'https://www.linkedin.com/oauth/v2/authorization?client_id=' + clientId +
+      '&redirect_uri=' + redirectUri +
+      '&scope=r_ads,w_ads,r_ads_reporting,r_organization_social' +
+      '&response_type=code';
+  }
+
+  if (url) window.location.href = url;
+}
+
+async function disconnectAdPlatform(platform) {
+  if (!confirm('Disconnect ' + platform + '?')) return;
+  await fetch('/api/ad-campaigns/auth/' + platform, { method: 'DELETE' });
+  // Also disconnect instagram if disconnecting facebook
+  if (platform === 'facebook') {
+    await fetch('/api/ad-campaigns/auth/instagram', { method: 'DELETE' });
+  }
+  loadAdPlatformStatus();
+  location.reload();
+}
+
+async function saveRedditAuth() {
+  var clientId = document.getElementById('reddit-client-id').value;
+  var clientSecret = document.getElementById('reddit-client-secret').value;
+  var accountId = document.getElementById('reddit-account-id').value;
+  if (!clientId || !clientSecret) { alert('Enter client ID and secret'); return; }
+
+  await fetch('/api/ad-campaigns/auth/reddit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      access_token: 'client_credentials',
+      account_id: accountId,
+      extra: { client_id: clientId, client_secret: clientSecret },
+    }),
+  });
+  alert('Reddit credentials saved!');
+  loadAdPlatformStatus();
+}
+
+// Check for connected= or auth_error= query params
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('connected')) {
+    alert(params.get('connected') + ' connected successfully!');
+    window.history.replaceState({}, '', '/settings');
+  }
+  if (params.get('auth_error')) {
+    alert('Auth error: ' + params.get('auth_error'));
+    window.history.replaceState({}, '', '/settings');
+  }
+})();
+</script>
+
+<%- include('partials/footer') %>

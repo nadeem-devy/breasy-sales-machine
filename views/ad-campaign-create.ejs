@@ -1,0 +1,264 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Create Ad Campaign</h1>
+  <button class="btn btn-outline btn-sm" onclick="window.location='/ad-campaigns'">Back to Campaigns</button>
+</div>
+
+<div class="card" style="max-width:800px;">
+  <!-- Step indicators -->
+  <div style="display:flex;gap:4px;margin-bottom:24px;" id="stepIndicators">
+    <div class="step-ind active" data-step="1">1. Platform</div>
+    <div class="step-ind" data-step="2">2. Details</div>
+    <div class="step-ind" data-step="3">3. Targeting</div>
+    <div class="step-ind" data-step="4">4. Creative</div>
+    <div class="step-ind" data-step="5">5. Review</div>
+  </div>
+
+  <!-- Step 1: Platform -->
+  <div class="form-step" id="step-1">
+    <h3>Choose Platform</h3>
+    <div class="platform-grid">
+      <div class="platform-card" data-platform="facebook" onclick="selectPlatform('facebook')">
+        <div class="platform-card-name" style="color:#1877f2;">Facebook</div>
+        <div class="platform-card-desc">News Feed & Stories ads with Lead Gen forms</div>
+      </div>
+      <div class="platform-card" data-platform="instagram" onclick="selectPlatform('instagram')">
+        <div class="platform-card-name" style="color:#e1306c;">Instagram</div>
+        <div class="platform-card-desc">Feed, Stories & Reels ads via Meta</div>
+      </div>
+      <div class="platform-card" data-platform="google" onclick="selectPlatform('google')">
+        <div class="platform-card-name" style="color:#4285f4;">Google Ads</div>
+        <div class="platform-card-desc">Search & Display ads with Lead Extensions</div>
+      </div>
+      <div class="platform-card" data-platform="linkedin" onclick="selectPlatform('linkedin')">
+        <div class="platform-card-name" style="color:#0a66c2;">LinkedIn</div>
+        <div class="platform-card-desc">Sponsored content with Lead Gen forms</div>
+      </div>
+      <div class="platform-card" data-platform="reddit" onclick="selectPlatform('reddit')">
+        <div class="platform-card-name" style="color:#ff4500;">Reddit</div>
+        <div class="platform-card-desc">Promoted posts targeting subreddits</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Campaign Details -->
+  <div class="form-step" id="step-2" style="display:none;">
+    <h3>Campaign Details</h3>
+    <div class="form-group"><label>Campaign Name</label><input type="text" id="f-name" placeholder="e.g. Spring Landscapers - Dallas"></div>
+    <div class="form-group">
+      <label>Objective</label>
+      <select id="f-objective">
+        <option value="lead_generation">Lead Generation</option>
+        <option value="traffic">Website Traffic</option>
+        <option value="awareness">Brand Awareness</option>
+      </select>
+    </div>
+    <div class="grid-2" style="gap:12px;">
+      <div class="form-group"><label>Daily Budget ($)</label><input type="number" id="f-daily-budget" value="25" min="1" step="1"></div>
+      <div class="form-group"><label>Total Budget ($) <span style="color:var(--text-dim);font-size:11px;">optional</span></label><input type="number" id="f-total-budget" value="0" min="0" step="1"></div>
+    </div>
+    <div class="grid-2" style="gap:12px;">
+      <div class="form-group"><label>Start Date</label><input type="date" id="f-start-date"></div>
+      <div class="form-group"><label>End Date <span style="color:var(--text-dim);font-size:11px;">optional</span></label><input type="date" id="f-end-date"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="goStep(1)">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="goStep(3)">Next: Targeting</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Targeting -->
+  <div class="form-step" id="step-3" style="display:none;">
+    <h3>Targeting</h3>
+    <div class="form-group"><label>Locations <span style="color:var(--text-dim);font-size:11px;">comma-separated cities, states, or countries</span></label><input type="text" id="f-locations" placeholder="Dallas TX, Houston TX, Austin TX"></div>
+    <div class="grid-2" style="gap:12px;">
+      <div class="form-group"><label>Age Min</label><input type="number" id="f-age-min" value="25" min="18" max="65"></div>
+      <div class="form-group"><label>Age Max</label><input type="number" id="f-age-max" value="55" min="18" max="65"></div>
+    </div>
+    <div class="form-group"><label>Interests <span style="color:var(--text-dim);font-size:11px;">comma-separated</span></label><input type="text" id="f-interests" placeholder="landscaping, lawn care, gardening, small business"></div>
+    <div class="form-group" id="subreddit-group" style="display:none;">
+      <label>Subreddits <span style="color:var(--text-dim);font-size:11px;">Reddit only — comma-separated</span></label>
+      <input type="text" id="f-subreddits" placeholder="r/landscaping, r/lawncare, r/smallbusiness">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="goStep(2)">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="goStep(4)">Next: Creative</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Creative -->
+  <div class="form-step" id="step-4" style="display:none;">
+    <h3>Ad Creative</h3>
+    <div class="form-group"><label>Headline</label><input type="text" id="f-headline" placeholder="Get More Jobs with Breasy" maxlength="100"></div>
+    <div class="form-group"><label>Body Text</label><textarea id="f-body" rows="4" placeholder="Join 500+ landscapers getting quality jobs every week. Sign up today and start receiving job requests in your area."></textarea></div>
+    <div class="form-group"><label>Image URL <span style="color:var(--text-dim);font-size:11px;">optional</span></label><input type="url" id="f-image" placeholder="https://example.com/ad-image.jpg"></div>
+    <div class="form-group">
+      <label>Call to Action</label>
+      <select id="f-cta">
+        <option value="SIGN_UP">Sign Up</option>
+        <option value="LEARN_MORE">Learn More</option>
+        <option value="APPLY_NOW">Apply Now</option>
+        <option value="GET_QUOTE">Get Quote</option>
+        <option value="CONTACT_US">Contact Us</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Landing Page URL <span style="color:var(--text-dim);font-size:11px;">for traffic/awareness objectives</span></label><input type="url" id="f-link" placeholder="https://breasy.com/signup"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="goStep(3)">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="goStep(5)">Next: Review</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Review -->
+  <div class="form-step" id="step-5" style="display:none;">
+    <h3>Review & Launch</h3>
+    <div id="reviewSummary" style="background:var(--bg-hover);border-radius:8px;padding:16px;font-size:14px;line-height:1.8;"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="goStep(4)">Back</button>
+      <button class="btn btn-outline btn-sm" onclick="saveDraft()">Save as Draft</button>
+      <button class="btn btn-primary" onclick="publishCampaign()">Publish Campaign</button>
+    </div>
+    <div id="publishResult" style="margin-top:12px;font-size:13px;"></div>
+  </div>
+</div>
+
+<style>
+  .step-ind { flex:1; text-align:center; padding:10px; font-size:12px; font-weight:600; border-radius:6px; background:var(--bg-hover); color:var(--text-dim); }
+  .step-ind.active { background:var(--accent); color:#fff; }
+  .step-ind.done { background:rgba(22,163,74,0.15); color:var(--green); }
+
+  .platform-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+  .platform-card { padding:20px; border:2px solid var(--border); border-radius:10px; cursor:pointer; text-align:center; transition:border-color 0.15s,background 0.15s; }
+  .platform-card:hover { border-color:var(--accent); background:var(--bg-hover); }
+  .platform-card.selected { border-color:var(--accent); background:rgba(59,130,246,0.08); }
+  .platform-card-name { font-size:18px; font-weight:700; margin-bottom:6px; }
+  .platform-card-desc { font-size:12px; color:var(--text-dim); }
+</style>
+
+<script>
+let selectedPlatform = '';
+let currentStep = 1;
+
+function selectPlatform(p) {
+  selectedPlatform = p;
+  document.querySelectorAll('.platform-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.platform === p);
+  });
+  // Show/hide Reddit subreddits
+  document.getElementById('subreddit-group').style.display = p === 'reddit' ? 'block' : 'none';
+  setTimeout(() => goStep(2), 300);
+}
+
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.form-step').forEach(s => s.style.display = 'none');
+  document.getElementById('step-' + n).style.display = 'block';
+  document.querySelectorAll('.step-ind').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.className = 'step-ind' + (sn === n ? ' active' : sn < n ? ' done' : '');
+  });
+  if (n === 5) buildReview();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+function buildReview() {
+  const el = document.getElementById('reviewSummary');
+  el.innerHTML = `
+    <strong>Platform:</strong> ${selectedPlatform}<br>
+    <strong>Name:</strong> ${esc(document.getElementById('f-name').value)}<br>
+    <strong>Objective:</strong> ${document.getElementById('f-objective').value}<br>
+    <strong>Daily Budget:</strong> $${document.getElementById('f-daily-budget').value}<br>
+    <strong>Total Budget:</strong> $${document.getElementById('f-total-budget').value || 'Unlimited'}<br>
+    <strong>Dates:</strong> ${document.getElementById('f-start-date').value || 'ASAP'} — ${document.getElementById('f-end-date').value || 'Ongoing'}<br>
+    <strong>Locations:</strong> ${esc(document.getElementById('f-locations').value) || 'US (default)'}<br>
+    <strong>Age:</strong> ${document.getElementById('f-age-min').value} — ${document.getElementById('f-age-max').value}<br>
+    <strong>Interests:</strong> ${esc(document.getElementById('f-interests').value) || 'None'}<br>
+    <strong>Headline:</strong> ${esc(document.getElementById('f-headline').value)}<br>
+    <strong>CTA:</strong> ${document.getElementById('f-cta').value}<br>
+  `;
+}
+
+function buildPayload() {
+  return {
+    platform: selectedPlatform,
+    name: document.getElementById('f-name').value,
+    objective: document.getElementById('f-objective').value,
+    daily_budget: parseFloat(document.getElementById('f-daily-budget').value) || 25,
+    total_budget: parseFloat(document.getElementById('f-total-budget').value) || 0,
+    start_date: document.getElementById('f-start-date').value || null,
+    end_date: document.getElementById('f-end-date').value || null,
+    targeting: {
+      locations: document.getElementById('f-locations').value.split(',').map(s => s.trim()).filter(Boolean),
+      age_min: parseInt(document.getElementById('f-age-min').value) || 25,
+      age_max: parseInt(document.getElementById('f-age-max').value) || 55,
+      interests: document.getElementById('f-interests').value.split(',').map(s => s.trim()).filter(Boolean),
+      subreddits: document.getElementById('f-subreddits').value.split(',').map(s => s.trim()).filter(Boolean),
+    },
+    creative: {
+      headline: document.getElementById('f-headline').value,
+      body: document.getElementById('f-body').value,
+      image_url: document.getElementById('f-image').value || null,
+      cta: document.getElementById('f-cta').value,
+      link: document.getElementById('f-link').value || null,
+    },
+  };
+}
+
+async function saveDraft() {
+  if (!selectedPlatform || !document.getElementById('f-name').value) {
+    alert('Please fill in platform and campaign name');
+    return;
+  }
+  try {
+    const res = await fetch('/api/ad-campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload()),
+    });
+    const data = await res.json();
+    document.getElementById('publishResult').innerHTML = '<span style="color:var(--green);">Draft saved! Redirecting...</span>';
+    setTimeout(() => window.location = '/ad-campaigns/' + data.id, 1000);
+  } catch (e) {
+    document.getElementById('publishResult').innerHTML = '<span style="color:var(--red);">Error: ' + e.message + '</span>';
+  }
+}
+
+async function publishCampaign() {
+  if (!selectedPlatform || !document.getElementById('f-name').value) {
+    alert('Please fill in platform and campaign name');
+    return;
+  }
+  const resultEl = document.getElementById('publishResult');
+  resultEl.innerHTML = '<span style="color:var(--text-dim);">Creating and publishing campaign...</span>';
+
+  try {
+    // Create first
+    const createRes = await fetch('/api/ad-campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload()),
+    });
+    const campaign = await createRes.json();
+
+    // Then publish
+    const pubRes = await fetch('/api/ad-campaigns/' + campaign.id + '/publish', { method: 'POST' });
+    const pubData = await pubRes.json();
+
+    if (pubData.success) {
+      resultEl.innerHTML = '<span style="color:var(--green);">Campaign published! Redirecting...</span>';
+      setTimeout(() => window.location = '/ad-campaigns/' + campaign.id, 1500);
+    } else {
+      resultEl.innerHTML = '<span style="color:var(--red);">Error: ' + (pubData.error || 'Unknown error') + '</span>';
+    }
+  } catch (e) {
+    resultEl.innerHTML = '<span style="color:var(--red);">Error: ' + e.message + '</span>';
+  }
+}
+
+// Set default start date to today
+document.getElementById('f-start-date').value = new Date().toISOString().split('T')[0];
+</script>
+
+<%- include('partials/footer') %>

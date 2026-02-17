@@ -1,0 +1,249 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>SMS Inbox</h1>
+</div>
+
+<div class="inbox-container">
+  <!-- Left: Contact List -->
+  <div class="inbox-sidebar">
+    <div class="inbox-search">
+      <input type="text" id="searchInput" placeholder="Search contacts..." onkeyup="debounceSearch()">
+    </div>
+    <div class="inbox-contacts" id="contactList">
+      <div class="inbox-empty">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Right: Chat Area -->
+  <div class="inbox-chat">
+    <div class="inbox-chat-header" id="chatHeader">
+      <div class="inbox-chat-placeholder">Select a conversation</div>
+    </div>
+    <div class="inbox-messages" id="chatMessages">
+      <div class="inbox-empty">Select a contact to view messages</div>
+    </div>
+    <div class="inbox-compose" id="composeArea" style="display:none;">
+      <div class="inbox-compose-row">
+        <select id="fromNumber" title="Send from this Twilio number"></select>
+      </div>
+      <div class="inbox-compose-row">
+        <textarea id="smsInput" rows="2" placeholder="Type a message... ({{first_name}}, {{company_name}})"></textarea>
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let searchTimeout;
+let selectedLeadId = null;
+let twilioNumbers = [];
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { currentPage = 1; loadContacts(); }, 300);
+}
+
+// ========== Load Twilio Numbers ==========
+async function loadTwilioNumbers() {
+  try {
+    const res = await fetch('/api/leads/twilio-numbers');
+    const data = await res.json();
+    twilioNumbers = data.numbers || [];
+    const sel = document.getElementById('fromNumber');
+    if (twilioNumbers.length === 0) {
+      sel.innerHTML = '<option value="">No Twilio numbers configured</option>';
+    } else {
+      sel.innerHTML = twilioNumbers.map((n, i) => `<option value="${n}"${i===0?' selected':''}>${n}</option>`).join('');
+    }
+  } catch(e) { console.error('Load numbers error:', e); }
+}
+
+// ========== Contact List ==========
+async function loadContacts() {
+  const search = document.getElementById('searchInput').value;
+  let url = `/api/leads/sms-inbox?page=${currentPage}&limit=50`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const container = document.getElementById('contactList');
+
+    if (!data.conversations || !data.conversations.length) {
+      container.innerHTML = '<div class="inbox-empty">No SMS conversations yet.<br>Send an SMS from a lead page to start.</div>';
+      return;
+    }
+
+    container.innerHTML = data.conversations.map(c => {
+      const unreadCount = c.unread_count || 0;
+      const isUnread = unreadCount > 0;
+      const preview = (c.last_message || '').substring(0, 50) + ((c.last_message || '').length > 50 ? '...' : '');
+      const time = timeAgo(new Date(c.last_message_at + 'Z'));
+      const active = c.id === selectedLeadId ? ' active' : '';
+      const unread = isUnread ? ' unread' : '';
+      return `<div class="inbox-contact${active}${unread}" onclick="selectContact(${c.id})" data-id="${c.id}">
+        <div class="inbox-contact-avatar">${(c.first_name || '?')[0].toUpperCase()}</div>
+        <div class="inbox-contact-info">
+          <div class="inbox-contact-name">${c.first_name} ${c.last_name || ''}${isUnread ? '<span class="unread-badge">' + unreadCount + '</span>' : ''}</div>
+          <div class="inbox-contact-company">${c.company_name || c.phone || ''}</div>
+          <div class="inbox-contact-preview">${isUnread ? '<span class="inbox-inbound-dot"></span>' : ''}${escapeHtml(preview)}</div>
+        </div>
+        <div class="inbox-contact-time">${isUnread ? '<span class="inbox-inbound-dot" style="margin-bottom:4px;"></span>' : ''}${time}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error('Contacts error:', e); }
+}
+
+// ========== Select Contact & Load Chat ==========
+async function selectContact(leadId) {
+  selectedLeadId = leadId;
+
+  // Mark as read
+  fetch(`/api/leads/${leadId}/mark-sms-read`, { method: 'POST' });
+
+  // Remove unread styling from this contact
+  document.querySelectorAll('.inbox-contact').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.id) === leadId);
+    if (parseInt(el.dataset.id) === leadId) {
+      el.classList.remove('unread');
+      const badge = el.querySelector('.unread-badge');
+      if (badge) badge.remove();
+      const dots = el.querySelectorAll('.inbox-inbound-dot');
+      dots.forEach(d => d.remove());
+    }
+  });
+
+  document.getElementById('composeArea').style.display = '';
+
+  try {
+    const res = await fetch(`/api/leads/${leadId}`);
+    const data = await res.json();
+    const l = data.lead;
+    document.getElementById('chatHeader').innerHTML = `
+      <div class="inbox-chat-lead-info">
+        <div class="inbox-contact-avatar">${(l.first_name || '?')[0].toUpperCase()}</div>
+        <div>
+          <strong>${l.first_name} ${l.last_name || ''}</strong>
+          <div style="font-size:12px;color:var(--text-dim);">${l.company_name || ''} ${l.phone ? '  ' + l.phone : ''}</div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-success btn-sm" onclick="initiateAICall()">AI Call</button>
+        <button class="btn btn-primary btn-sm" onclick="initiateManualCall()">Call Now</button>
+        <a href="/lead/${leadId}" class="btn btn-outline btn-sm">View Lead</a>
+      </div>
+    `;
+  } catch(e) {}
+
+  loadChat();
+}
+
+async function loadChat() {
+  if (!selectedLeadId) return;
+  try {
+    const res = await fetch(`/api/leads/${selectedLeadId}/sms-thread`);
+    const data = await res.json();
+    const container = document.getElementById('chatMessages');
+
+    if (!data.messages.length) {
+      container.innerHTML = '<div class="inbox-empty">No messages yet. Send the first one below.</div>';
+      return;
+    }
+
+    container.innerHTML = data.messages.map(m => {
+      const isOutbound = m.type === 'sms_sent';
+      const time = new Date(m.created_at + 'Z').toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+      return `<div class="chat-bubble ${isOutbound ? 'chat-outbound' : 'chat-inbound'}">
+        <div class="chat-text">${escapeHtml(m.content)}</div>
+        <div class="chat-time">${time}</div>
+      </div>`;
+    }).join('');
+
+    container.scrollTop = container.scrollHeight;
+  } catch(e) { console.error('Chat error:', e); }
+}
+
+// ========== Send Message ==========
+async function sendMessage() {
+  if (!selectedLeadId) return;
+  const input = document.getElementById('smsInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const from = document.getElementById('fromNumber').value;
+  const btn = document.getElementById('sendBtn');
+  input.disabled = true;
+  btn.disabled = true;
+
+  try {
+    const body = { message: msg };
+    if (from) body.from = from;
+    const res = await fetch(`/api/leads/${selectedLeadId}/sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      input.value = '';
+      await loadChat();
+      loadContacts();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to send SMS');
+    }
+  } catch(e) {
+    alert('Failed to send SMS');
+  } finally {
+    input.disabled = false;
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+// ========== Calls ==========
+async function initiateAICall() {
+  if (!selectedLeadId) return;
+  if (!confirm('Start an AI call to this lead?')) return;
+  try {
+    const res = await fetch(`/api/leads/${selectedLeadId}/call-ai`, { method: 'POST' });
+    const data = await res.json();
+    alert(res.ok ? (data.message || 'AI call initiated') : (data.error || 'Failed to start AI call'));
+  } catch(e) { alert('Failed to start AI call'); }
+}
+
+function initiateManualCall() {
+  if (!selectedLeadId) return;
+  BreasySoftphone.makeCall(selectedLeadId);
+}
+
+// ========== Helpers ==========
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function timeAgo(date) {
+  const secs = Math.floor((new Date() - date) / 1000);
+  if (secs < 60) return 'now';
+  if (secs < 3600) return Math.floor(secs/60) + 'm';
+  if (secs < 86400) return Math.floor(secs/3600) + 'h';
+  if (secs < 604800) return Math.floor(secs/86400) + 'd';
+  return date.toLocaleDateString([], {month:'short', day:'numeric'});
+}
+
+// ========== Keyboard ==========
+document.getElementById('smsInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// ========== Init ==========
+loadTwilioNumbers();
+loadContacts();
+setInterval(() => { loadContacts(); if (selectedLeadId) loadChat(); }, 15000);
+</script>
+
+<%- include('partials/footer') %>

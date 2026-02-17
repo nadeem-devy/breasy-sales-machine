@@ -1,0 +1,311 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div>
+    <a href="/companies" style="color:var(--text-dim);text-decoration:none;font-size:13px;">&larr; Back to Companies</a>
+    <h1 id="companyName" style="margin-top:4px;">Loading...</h1>
+    <div id="companyDomain" style="color:var(--accent);font-size:14px;"></div>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-outline btn-sm" onclick="editCompany()">Edit</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteCompany()">Delete</button>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Company Info -->
+  <div class="card">
+    <div class="card-header"><h3>Company Details</h3></div>
+    <div id="companyInfo" style="padding:0 4px;">Loading...</div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="card">
+    <div class="card-header"><h3>Contact Overview</h3></div>
+    <div id="contactStats" style="padding:0 4px;">Loading...</div>
+  </div>
+</div>
+
+<!-- Contacts Table -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <h3>Contacts (<span id="contactCount">0</span>)</h3>
+    <button class="btn btn-outline btn-sm" onclick="showAddContactModal()">Link Contact</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Title</th>
+          <th>Grade</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="contactsTable">
+        <tr><td colspan="8" style="color:var(--text-dim);">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="margin-bottom:16px;color:var(--text);">Edit Company</h3>
+    <div class="form-group"><label style="color:var(--text);">Company Name *</label><input type="text" id="e-name" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Domain</label><input type="text" id="e-domain" placeholder="e.g. acme.com" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Website</label><input type="text" id="e-website" placeholder="https://acme.com" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Industry</label><input type="text" id="e-industry" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label style="color:var(--text);">City</label><input type="text" id="e-city" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+      <div class="form-group"><label style="color:var(--text);">State</label><input type="text" id="e-state" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    </div>
+    <div class="form-group"><label style="color:var(--text);">Phone</label><input type="text" id="e-phone" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Employee Count</label><input type="number" id="e-employees" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Notes</label><textarea id="e-notes" rows="3" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveCompany()">Save</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="hideEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div id="addContactModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="margin-bottom:16px;color:var(--text);">Link Contact to Company</h3>
+    <div class="form-group">
+      <label style="color:var(--text);">Search lead by name, email, or phone</label>
+      <input type="text" id="leadSearch" placeholder="Start typing..." oninput="searchLeads()" style="color:var(--text);background:var(--bg);border:1px solid var(--border);">
+    </div>
+    <div id="leadResults" style="max-height:200px;overflow-y:auto;margin-bottom:12px;"></div>
+    <button class="btn btn-outline" style="width:100%;" onclick="hideAddContactModal()">Cancel</button>
+  </div>
+</div>
+
+<style>
+  .cd-info-table { width:100%; }
+  .cd-info-table td { padding:6px 0;font-size:13px;vertical-align:top; }
+  .cd-info-table td:first-child { color:var(--text-dim);width:120px;white-space:nowrap; }
+  .cd-info-table td:last-child { font-weight:500; }
+
+  .cd-stat-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px; }
+  .cd-stat-box { text-align:center;padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border); }
+  [data-theme="light"] .cd-stat-box { background:rgba(0,0,0,0.03); }
+  .cd-stat-val { font-size:22px;font-weight:700; }
+  .cd-stat-lbl { font-size:10px;color:var(--text-dim);margin-top:2px;text-transform:uppercase; }
+
+  .grade-badge { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:700;font-size:13px; }
+  .grade-A { background:rgba(22,163,74,0.15);color:#16a34a; }
+  .grade-B { background:rgba(59,130,246,0.15);color:#3b82f6; }
+  .grade-C { background:rgba(245,158,11,0.15);color:#f59e0b; }
+  .grade-D { background:rgba(249,115,22,0.15);color:#f97316; }
+  .grade-F { background:rgba(239,68,68,0.15);color:#ef4444; }
+
+  .lead-search-item {
+    padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;
+    border:1px solid var(--border);margin-bottom:4px;
+  }
+  .lead-search-item:hover { background:rgba(59,130,246,0.08);border-color:var(--accent); }
+</style>
+
+<script>
+const companyId = <%= typeof companyId !== 'undefined' ? companyId : 0 %>;
+let companyData = null;
+
+function esc(s) { const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+async function loadCompany() {
+  try {
+    const res = await fetch('/api/companies/' + companyId);
+    const data = await res.json();
+    companyData = data.company;
+    const c = data.company;
+    const contacts = data.contacts || [];
+
+    document.getElementById('companyName').textContent = c.name;
+    document.getElementById('companyDomain').textContent = c.domain || '';
+
+    // Info
+    document.getElementById('companyInfo').innerHTML =
+      '<table class="cd-info-table">' +
+        '<tr><td>Domain</td><td><strong>' + esc(c.domain || '—') + '</strong></td></tr>' +
+        '<tr><td>Website</td><td>' + (c.website ? '<a href="' + esc(c.website) + '" target="_blank" style="color:var(--accent);">' + esc(c.website) + '</a>' : '—') + '</td></tr>' +
+        '<tr><td>Phone</td><td>' + (c.phone ? '<a href="tel:' + esc(c.phone) + '" style="color:var(--accent);">' + esc(c.phone) + '</a>' : '—') + '</td></tr>' +
+        '<tr><td>Industry</td><td>' + esc(c.industry || '—') + '</td></tr>' +
+        '<tr><td>Location</td><td>' + esc([c.city, c.state].filter(Boolean).join(', ') || '—') + '</td></tr>' +
+        '<tr><td>Address</td><td>' + esc(c.address || '—') + '</td></tr>' +
+        '<tr><td>Employees</td><td>' + (c.employee_count || '—') + '</td></tr>' +
+        '<tr><td>Rating</td><td>' + (c.rating ? c.rating + ' (' + (c.review_count || 0) + ' reviews)' : '—') + '</td></tr>' +
+        (c.notes ? '<tr><td>Notes</td><td>' + esc(c.notes) + '</td></tr>' : '') +
+        '<tr><td>Created</td><td style="font-size:12px;color:var(--text-dim);">' + (c.created_at || '') + '</td></tr>' +
+      '</table>';
+
+    // Stats
+    const gradeCount = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+    let totalScore = 0;
+    let qualified = 0;
+    contacts.forEach(l => {
+      if (l.qualification_grade && gradeCount[l.qualification_grade] !== undefined) gradeCount[l.qualification_grade]++;
+      totalScore += l.score || 0;
+      if (l.score_tier === 'qualified' || l.score_tier === 'hot') qualified++;
+    });
+    const avgScore = contacts.length > 0 ? Math.round(totalScore / contacts.length) : 0;
+
+    document.getElementById('contactStats').innerHTML =
+      '<div class="cd-stat-grid">' +
+        '<div class="cd-stat-box"><div class="cd-stat-val" style="color:var(--accent);">' + contacts.length + '</div><div class="cd-stat-lbl">Contacts</div></div>' +
+        '<div class="cd-stat-box"><div class="cd-stat-val" style="color:var(--green);">' + qualified + '</div><div class="cd-stat-lbl">Hot / Qualified</div></div>' +
+        '<div class="cd-stat-box"><div class="cd-stat-val">' + avgScore + '</div><div class="cd-stat-lbl">Avg Score</div></div>' +
+      '</div>' +
+      '<div class="cd-stat-grid" style="margin-top:10px;">' +
+        Object.entries(gradeCount).map(([g, ct]) =>
+          '<div class="cd-stat-box"><div class="cd-stat-val grade-' + g + '" style="font-size:18px;">' + ct + '</div><div class="cd-stat-lbl">Grade ' + g + '</div></div>'
+        ).join('') +
+      '</div>';
+
+    // Contacts table
+    document.getElementById('contactCount').textContent = contacts.length;
+    const tbody = document.getElementById('contactsTable');
+    if (!contacts.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim);">No contacts linked yet. Click "Link Contact" or run the auto-matcher.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = contacts.map(l => {
+      const name = [l.first_name, l.last_name].filter(Boolean).join(' ') || 'Unknown';
+      const grade = l.qualification_grade || '—';
+      const gradeClass = 'ABCDF'.includes(grade) ? 'grade-' + grade : '';
+      return '<tr>' +
+        '<td><a href="/lead/' + l.id + '" style="color:var(--accent);font-weight:600;">' + esc(name) + '</a></td>' +
+        '<td>' + esc(l.email || '') + '</td>' +
+        '<td>' + esc(l.phone || '') + '</td>' +
+        '<td>' + esc(l.job_title || '') + '</td>' +
+        '<td><span class="grade-badge ' + gradeClass + '">' + grade + '</span></td>' +
+        '<td>' + (l.score || 0) + '</td>' +
+        '<td><span style="font-size:12px;">' + (l.status || '').replace(/_/g, ' ') + '</span></td>' +
+        '<td><button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;" onclick="unlinkContact(' + l.id + ')">Unlink</button></td>' +
+      '</tr>';
+    }).join('');
+  } catch (e) {
+    console.error('Load company error:', e);
+  }
+}
+
+function editCompany() {
+  if (!companyData) return;
+  document.getElementById('e-name').value = companyData.name || '';
+  document.getElementById('e-domain').value = companyData.domain || '';
+  document.getElementById('e-website').value = companyData.website || '';
+  document.getElementById('e-industry').value = companyData.industry || '';
+  document.getElementById('e-city').value = companyData.city || '';
+  document.getElementById('e-state').value = companyData.state || '';
+  document.getElementById('e-phone').value = companyData.phone || '';
+  document.getElementById('e-employees').value = companyData.employee_count || 0;
+  document.getElementById('e-notes').value = companyData.notes || '';
+  document.getElementById('editModal').style.display = 'flex';
+}
+function hideEditModal() { document.getElementById('editModal').style.display = 'none'; }
+
+async function saveCompany() {
+  const data = {
+    name: document.getElementById('e-name').value.trim(),
+    domain: document.getElementById('e-domain').value.trim(),
+    website: document.getElementById('e-website').value.trim(),
+    industry: document.getElementById('e-industry').value.trim(),
+    city: document.getElementById('e-city').value.trim(),
+    state: document.getElementById('e-state').value.trim(),
+    phone: document.getElementById('e-phone').value.trim(),
+    employee_count: parseInt(document.getElementById('e-employees').value) || 0,
+    notes: document.getElementById('e-notes').value.trim(),
+  };
+  if (!data.name) return alert('Company name is required');
+
+  try {
+    await fetch('/api/companies/' + companyId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    hideEditModal();
+    loadCompany();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function deleteCompany() {
+  if (!confirm('Delete this company? All contacts will be unlinked (not deleted).')) return;
+  try {
+    await fetch('/api/companies/' + companyId, { method: 'DELETE' });
+    window.location = '/companies';
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function unlinkContact(leadId) {
+  if (!confirm('Unlink this contact from the company?')) return;
+  try {
+    await fetch('/api/companies/' + companyId + '/remove-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId }),
+    });
+    loadCompany();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function showAddContactModal() {
+  document.getElementById('addContactModal').style.display = 'flex';
+  document.getElementById('leadSearch').value = '';
+  document.getElementById('leadResults').innerHTML = '';
+  document.getElementById('leadSearch').focus();
+}
+function hideAddContactModal() { document.getElementById('addContactModal').style.display = 'none'; }
+
+let searchTimer;
+async function searchLeads() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => {
+    const q = document.getElementById('leadSearch').value.trim();
+    if (q.length < 2) { document.getElementById('leadResults').innerHTML = ''; return; }
+    try {
+      const res = await fetch('/api/leads?search=' + encodeURIComponent(q) + '&limit=10');
+      const data = await res.json();
+      const container = document.getElementById('leadResults');
+      if (!data.leads || !data.leads.length) {
+        container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:13px;">No leads found</div>';
+        return;
+      }
+      container.innerHTML = data.leads.map(l => {
+        const name = [l.first_name, l.last_name].filter(Boolean).join(' ') || 'Unknown';
+        const alreadyLinked = l.company_id === companyId;
+        return '<div class="lead-search-item" onclick="linkContact(' + l.id + ')" style="' + (alreadyLinked ? 'opacity:0.5;' : '') + '">' +
+          '<strong>' + esc(name) + '</strong>' +
+          (l.email ? ' &middot; ' + esc(l.email) : '') +
+          (l.phone ? ' &middot; ' + esc(l.phone) : '') +
+          (alreadyLinked ? ' <span style="color:var(--green);font-size:11px;">(already linked)</span>' : '') +
+        '</div>';
+      }).join('');
+    } catch (e) { console.error(e); }
+  }, 300);
+}
+
+async function linkContact(leadId) {
+  try {
+    await fetch('/api/companies/' + companyId + '/add-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId }),
+    });
+    hideAddContactModal();
+    loadCompany();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+loadCompany();
+</script>
+
+<%- include('partials/footer') %>

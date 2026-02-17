@@ -1,0 +1,981 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Scrape Leads</h1>
+</div>
+
+<!-- Batch Scrape — Target Markets -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <h3>Batch Scrape — Your Target Markets</h3>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="selectAllCities()">Select All</button>
+      <button class="btn btn-outline btn-sm" onclick="deselectAllCities()">Deselect All</button>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:16px;margin-bottom:16px;">
+    <div class="form-group">
+      <label>Business Type</label>
+      <select id="batchQuery">
+          <option value="Landscaping">Landscaping</option>
+          <option value="Lawn Care">Lawn Care</option>
+          <option value="Irrigation">Irrigation</option>
+          <option value="Tree Service">Tree Service</option>
+          <option value="Handyman">Handyman</option>
+          <option value="Property Maintenance">Property Maintenance</option>
+          <option value="Pest Control">Pest Control</option>
+          <option value="Pool Service">Pool Service</option>
+          <option value="Cleaning Service">Cleaning Service</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="HVAC">HVAC</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Roofing">Roofing</option>
+          <option value="Painting">Painting</option>
+          <option value="General Contractor">General Contractor</option>
+        </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;">
+      <div class="form-group">
+        <label>Mode</label>
+        <select id="batchMode" onchange="updateBatchModeUI()">
+          <option value="waterfall">Waterfall (All 3)</option>
+          <option value="single">Single Source</option>
+        </select>
+      </div>
+      <div class="form-group" id="batchSourceGroup" style="display:none;">
+        <label>Source</label>
+        <select id="batchSource">
+          <option value="google_maps">Google Maps</option>
+          <option value="yelp">Yelp</option>
+          <option value="yellow_pages">Yellow Pages</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Per City</label>
+        <select id="batchMax">
+          <option value="20">20</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Max Reviews</label>
+        <select id="batchMaxReviews">
+          <option value="">No limit</option>
+          <option value="5">5 or less</option>
+          <option value="10" selected>10 or less</option>
+          <option value="25">25 or less</option>
+          <option value="50">50 or less</option>
+          <option value="100">100 or less</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Campaign</label>
+        <select id="batchCampaign"></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Markets Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px;margin-bottom:16px;">
+
+    <!-- Arizona -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Arizona</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Phoenix, AZ" checked> Phoenix</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Tucson, AZ" checked> Tucson</label>
+    </div>
+
+    <!-- Texas -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Texas</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Dallas, TX" checked> Dallas</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Fort Worth, TX" checked> Fort Worth</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Austin, TX" checked> Austin</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Houston, TX" checked> Houston</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="San Antonio, TX" checked> San Antonio</label>
+    </div>
+
+    <!-- Florida -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Florida</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Jacksonville, FL" checked> Jacksonville</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Orlando, FL" checked> Orlando</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Tampa, FL" checked> Tampa Bay</label>
+    </div>
+
+    <!-- Georgia -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Georgia</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Atlanta, GA" checked> Atlanta</label>
+    </div>
+
+    <!-- Colorado -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Colorado</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Denver, CO" checked> Denver</label>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Colorado Springs, CO" checked> Colorado Springs</label>
+    </div>
+
+    <!-- Nevada -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Nevada</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Las Vegas, NV" checked> Las Vegas</label>
+    </div>
+
+    <!-- Washington -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent);">Washington</div>
+      <label class="city-check"><input type="checkbox" class="city-cb" value="Seattle, WA" checked> Seattle</label>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div id="batchCitySummary" style="font-size:13px;color:var(--text-dim);"></div>
+    <button class="btn btn-primary" id="batchBtn" onclick="runBatchScrape()">Scrape All Selected Cities</button>
+  </div>
+</div>
+
+<!-- Quality Filter -->
+<div class="card" style="margin-top:20px;margin-bottom:20px;">
+  <div class="card-header">
+    <h3>Lead Quality Filter (Enhanced)</h3>
+    <span style="font-size:12px;color:var(--green);background:rgba(34,197,94,0.15);padding:3px 10px;border-radius:12px;">22 signals / A-F grading</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;font-size:13px;">
+    <div>
+      <div style="font-weight:600;color:var(--red);margin-bottom:6px;">Auto-Reject</div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-dim);">
+        <div>&#10007; No business name</div>
+        <div>&#10007; Invalid / toll-free phone</div>
+        <div>&#10007; No city or state</div>
+        <div>&#10007; Wrong niche (configurable)</div>
+        <div>&#10007; 50+ employees</div>
+        <div>&#10007; Spam / fake names</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;color:var(--accent);margin-bottom:6px;">Enrichment Signals</div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-dim);">
+        <div>+20 Data completeness 90%+</div>
+        <div>+15 Verified on 3 sources</div>
+        <div>+10 Verified on 2 sources</div>
+        <div>+10 Website live (200 OK)</div>
+        <div>+10 Mobile phone detected</div>
+        <div style="color:var(--red);">-5 VOIP phone</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;color:var(--green);margin-bottom:6px;">Business Quality</div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-dim);">
+        <div>+20 Category match</div>
+        <div>+15 Small biz (1-10 staff)</div>
+        <div>+15 50+ reviews</div>
+        <div>+8 Rating 4.5+</div>
+        <div>+10 Full address</div>
+        <div>+5 Has email</div>
+        <div style="color:var(--red);">-10 Rating below 3.0</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;color:var(--yellow);margin-bottom:6px;">Qualification Grades</div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-dim);">
+        <div><span style="color:var(--green);font-weight:700;">A</span> (90+) Top tier</div>
+        <div><span style="color:var(--accent);font-weight:700;">B</span> (70-89) Strong lead</div>
+        <div><span style="color:var(--yellow);font-weight:700;">C</span> (50-69) Decent</div>
+        <div><span style="color:var(--orange);font-weight:700;">D</span> (30-49) Low quality</div>
+        <div><span style="color:var(--red);font-weight:700;">F</span> (&lt;30) Minimal data</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr style="border-color:var(--border);margin:24px 0;">
+
+<!-- Single City Scrape -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3>Single City Scrape</h3></div>
+    <form id="scrapeForm" onsubmit="runScrape(event)">
+      <div class="form-group">
+        <label>Source</label>
+        <select id="scrapeSource" onchange="updateSourceUI()">
+          <option value="google_maps">Google Maps</option>
+          <option value="yelp">Yelp</option>
+          <option value="yellow_pages">Yellow Pages</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Search Query</label>
+        <input type="text" id="scrapeQuery" placeholder="e.g. Landscaping, Lawn Care, Plumbing" required>
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" id="scrapeLocation" placeholder="e.g. Miami, FL" required>
+      </div>
+      <div class="grid-2" style="gap:10px;">
+        <div class="form-group">
+          <label>Max Results</label>
+          <select id="scrapeMax">
+            <option value="20">20</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Campaign</label>
+          <select id="scrapeCampaign"></select>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:10px;">
+        <div class="form-group">
+          <label>Max Reviews</label>
+          <select id="scrapeMaxReviews">
+            <option value="">No limit</option>
+            <option value="5">5 or less</option>
+            <option value="10" selected>10 or less</option>
+            <option value="25">25 or less</option>
+            <option value="50">50 or less</option>
+            <option value="100">100 or less</option>
+          </select>
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-group" id="yelpCategories" style="display:none;">
+        <label>Yelp Category <span style="color:var(--text-dim);font-size:11px;">(optional)</span></label>
+        <input type="text" id="scrapeCategories" placeholder="e.g. restaurants, beautysvc, dentists">
+      </div>
+      <button type="submit" class="btn btn-primary" id="scrapeBtn">Start Scraping</button>
+    </form>
+
+    <div style="margin-top:16px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:8px;">API Key Status</div>
+      <div id="apiStatus" style="font-size:12px;color:var(--text-dim);">Checking...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Results</h3>
+      <span id="resultCount" style="color:var(--text-dim);font-size:13px;"></span>
+    </div>
+    <div id="scrapeResult">
+      <div class="empty" style="padding:40px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">&#128269;</div>
+        <div style="color:var(--text-dim);">Use Batch Scrape above for all your markets, or search a single city here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recently Scraped Leads (persistent) -->
+<div class="card" style="margin-top:20px;" id="recentLeadsCard">
+  <div class="card-header">
+    <h3>Recently Scraped Leads</h3>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="recentLeadsCount" style="font-size:13px;color:var(--text-dim);"></span>
+      <button class="btn btn-outline btn-sm" onclick="loadRecentLeads()">Refresh</button>
+    </div>
+  </div>
+  <div id="recentLeadsBody" style="max-height:500px;overflow-y:auto;">
+    <div style="padding:20px;text-align:center;color:var(--text-dim);">Loading...</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCRAPE PROGRESS MODAL (fullscreen, white bg) -->
+<!-- ============================================ -->
+<div id="scrapeModal" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);overflow-y:auto;">
+  <div style="max-width:700px;margin:40px auto;padding:32px;">
+    <!-- Header with minimize button -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+      <div style="flex:1;text-align:center;">
+        <div id="modalIcon" style="font-size:40px;margin-bottom:8px;">
+          <span class="spin-icon">&#9881;</span>
+        </div>
+        <h2 id="modalTitle" style="color:var(--text);margin:0;">Scraping in Progress</h2>
+        <div id="modalSubtitle" style="color:var(--text-dim);font-size:14px;margin-top:4px;"></div>
+      </div>
+      <button id="modalMinimizeBtn" onclick="minimizeModal()" title="Minimize to corner" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--text-dim);font-size:12px;white-space:nowrap;margin-left:12px;">
+        &#9660; Minimize
+      </button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;height:24px;overflow:hidden;margin-bottom:20px;position:relative;">
+      <div id="modalProgressBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:12px;width:0%;transition:width 0.5s ease;"></div>
+      <div id="modalProgressText" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;"></div>
+    </div>
+
+    <!-- Current City -->
+    <div id="modalCurrentCity" style="text-align:center;margin-bottom:20px;display:none;">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">Now scraping:</div>
+      <div id="modalCurrentCityName" style="font-size:16px;font-weight:600;color:var(--accent);"></div>
+    </div>
+
+    <!-- Running Totals -->
+    <div id="modalTotals" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div style="text-align:center;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+        <div id="totalFound" style="font-size:22px;font-weight:700;color:var(--accent);">0</div>
+        <div style="font-size:11px;color:var(--text-dim);">Found</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+        <div id="totalImported" style="font-size:22px;font-weight:700;color:var(--green);">0</div>
+        <div style="font-size:11px;color:var(--text-dim);">Imported</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+        <div id="totalFiltered" style="font-size:22px;font-weight:700;color:var(--orange);">0</div>
+        <div style="font-size:11px;color:var(--text-dim);">Filtered</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+        <div id="totalDupes" style="font-size:22px;font-weight:700;color:var(--yellow);">0</div>
+        <div style="font-size:11px;color:var(--text-dim);">Duplicates</div>
+      </div>
+    </div>
+
+    <!-- Grade Distribution (appears as data comes in) -->
+    <div id="modalGrades" style="display:none;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-align:center;">Grade Distribution</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <div style="text-align:center;padding:8px 14px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);min-width:50px;">
+          <div id="gradeA" style="font-size:18px;font-weight:700;color:var(--green);">0</div>
+          <div style="font-size:10px;color:var(--text-dim);">A</div>
+        </div>
+        <div style="text-align:center;padding:8px 14px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);min-width:50px;">
+          <div id="gradeB" style="font-size:18px;font-weight:700;color:var(--accent);">0</div>
+          <div style="font-size:10px;color:var(--text-dim);">B</div>
+        </div>
+        <div style="text-align:center;padding:8px 14px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);min-width:50px;">
+          <div id="gradeC" style="font-size:18px;font-weight:700;color:var(--yellow);">0</div>
+          <div style="font-size:10px;color:var(--text-dim);">C</div>
+        </div>
+        <div style="text-align:center;padding:8px 14px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);min-width:50px;">
+          <div id="gradeD" style="font-size:18px;font-weight:700;color:var(--orange);">0</div>
+          <div style="font-size:10px;color:var(--text-dim);">D</div>
+        </div>
+        <div style="text-align:center;padding:8px 14px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);min-width:50px;">
+          <div id="gradeF" style="font-size:18px;font-weight:700;color:var(--red);">0</div>
+          <div style="font-size:10px;color:var(--text-dim);">F</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- City-by-City Results -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-dim);">City Progress</div>
+      <div id="modalCityList" style="max-height:300px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Cancel button (during scrape) -->
+    <div id="modalCancelRow" style="margin-top:16px;text-align:center;">
+      <button class="btn btn-outline" onclick="cancelScrape()" style="color:var(--red);border-color:var(--red);">Cancel Scrape</button>
+    </div>
+
+    <!-- Done Actions (hidden until complete) -->
+    <div id="modalDoneActions" style="display:none;margin-top:20px;text-align:center;">
+      <a href="/leads" class="btn btn-primary" style="margin-right:8px;">View All Leads</a>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MINIMIZED CORNER PROGRESS BAR                -->
+<!-- ============================================ -->
+<div id="miniProgress" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);width:320px;cursor:pointer;" onclick="restoreModal()">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="spin-icon" id="miniSpinner" style="font-size:16px;">&#9881;</span>
+      <span id="miniTitle" style="font-size:13px;font-weight:600;color:var(--text);">Scraping...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="event.stopPropagation();cancelScrape();" title="Cancel" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1;">&#10005;</button>
+      <button onclick="event.stopPropagation();restoreModal();" title="Expand" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">&#9650;</button>
+    </div>
+  </div>
+  <div style="background:var(--border);border-radius:6px;height:8px;overflow:hidden;">
+    <div id="miniProgressBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:6px;width:0%;transition:width 0.5s ease;"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-dim);">
+    <span id="miniStats"></span>
+    <span id="miniPct"></span>
+  </div>
+</div>
+
+<style>
+.city-check {
+  display:block;padding:4px 0;font-size:13px;cursor:pointer;
+}
+.city-check input { margin-right:6px; }
+.city-row { display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px; }
+.city-row:last-child { border-bottom:none; }
+
+/* Modal animations */
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+@keyframes fadeSlide { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+.spin-icon { display:inline-block; animation: spin 2s linear infinite; }
+.city-item { animation: fadeSlide 0.3s ease; }
+.city-item-active { animation: pulse 1.5s ease infinite; }
+
+/* Recent leads table */
+.leads-table { width:100%;border-collapse:collapse;font-size:13px; }
+.leads-table th { text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text-dim);font-size:11px;text-transform:uppercase; }
+.leads-table td { padding:7px 10px;border-bottom:1px solid var(--border); }
+.leads-table tr:hover { background:rgba(255,255,255,0.03); }
+.grade-badge { display:inline-block;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-weight:700;font-size:12px; }
+.grade-A { background:rgba(34,197,94,0.2);color:var(--green); }
+.grade-B { background:rgba(59,130,246,0.2);color:var(--accent); }
+.grade-C { background:rgba(234,179,8,0.2);color:var(--yellow); }
+.grade-D { background:rgba(249,115,22,0.2);color:var(--orange); }
+.grade-F { background:rgba(239,68,68,0.2);color:var(--red); }
+.delete-btn { background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;opacity:0.5; }
+.delete-btn:hover { opacity:1;background:rgba(239,68,68,0.1); }
+</style>
+
+<script>
+// ==========================================
+// BATCH SCRAPE
+// ==========================================
+function getSelectedCities() {
+  return Array.from(document.querySelectorAll('.city-cb:checked')).map(function(cb) { return cb.value; });
+}
+
+function selectAllCities() {
+  document.querySelectorAll('.city-cb').forEach(function(cb) { cb.checked = true; });
+  updateCitySummary();
+}
+
+function deselectAllCities() {
+  document.querySelectorAll('.city-cb').forEach(function(cb) { cb.checked = false; });
+  updateCitySummary();
+}
+
+function updateCitySummary() {
+  var cities = getSelectedCities();
+  var maxPer = parseInt(document.getElementById('batchMax').value);
+  document.getElementById('batchCitySummary').textContent =
+    cities.length + ' cities selected — up to ' + (cities.length * maxPer) + ' leads';
+}
+
+document.querySelectorAll('.city-cb').forEach(function(cb) {
+  cb.addEventListener('change', updateCitySummary);
+});
+document.getElementById('batchMax').addEventListener('change', updateCitySummary);
+updateCitySummary();
+
+function updateBatchModeUI() {
+  var mode = document.getElementById('batchMode').value;
+  document.getElementById('batchSourceGroup').style.display = mode === 'single' ? 'block' : 'none';
+}
+
+// ==========================================
+// MODAL HELPERS
+// ==========================================
+var runTotals = { found: 0, imported: 0, filtered: 0, dupes: 0 };
+var runGrades = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+var scrapeCancelled = false;
+var scrapeRunning = false;
+var modalTotalCities = 0;
+var modalCompletedCities = 0;
+
+function openModal(title, subtitle, cities) {
+  runTotals = { found: 0, imported: 0, filtered: 0, dupes: 0 };
+  runGrades = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  scrapeCancelled = false;
+  scrapeRunning = true;
+  modalTotalCities = cities.length;
+  modalCompletedCities = 0;
+
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSubtitle').textContent = subtitle;
+  document.getElementById('modalProgressBar').style.width = '0%';
+  document.getElementById('modalProgressText').textContent = '0 / ' + cities.length + ' cities';
+  document.getElementById('modalCurrentCity').style.display = 'none';
+  document.getElementById('modalGrades').style.display = 'none';
+  document.getElementById('modalDoneActions').style.display = 'none';
+  document.getElementById('modalCancelRow').style.display = 'block';
+  document.getElementById('modalMinimizeBtn').style.display = '';
+  document.getElementById('modalIcon').innerHTML = '<span class="spin-icon">&#9881;</span>';
+  updateModalTotals();
+
+  // Build city list with pending status
+  var listEl = document.getElementById('modalCityList');
+  listEl.innerHTML = '';
+  cities.forEach(function(city, i) {
+    var div = document.createElement('div');
+    div.id = 'city-' + i;
+    div.className = 'city-item';
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;';
+    div.innerHTML = '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<span id="city-icon-' + i + '" style="color:var(--text-dim);font-size:14px;">&#9675;</span>' +
+      '<span>' + city + '</span></div>' +
+      '<span id="city-status-' + i + '" style="color:var(--text-dim);font-size:12px;">Pending</span>';
+    listEl.appendChild(div);
+  });
+
+  // Show full modal, hide mini
+  document.getElementById('scrapeModal').style.display = 'block';
+  document.getElementById('miniProgress').style.display = 'none';
+}
+
+function minimizeModal() {
+  document.getElementById('scrapeModal').style.display = 'none';
+  var mini = document.getElementById('miniProgress');
+  mini.style.display = 'block';
+  syncMiniProgress();
+}
+
+function restoreModal() {
+  document.getElementById('miniProgress').style.display = 'none';
+  document.getElementById('scrapeModal').style.display = 'block';
+}
+
+function syncMiniProgress() {
+  var pct = modalTotalCities > 0 ? Math.round((modalCompletedCities / modalTotalCities) * 100) : 0;
+  document.getElementById('miniProgressBar').style.width = pct + '%';
+  document.getElementById('miniPct').textContent = pct + '%';
+  document.getElementById('miniStats').textContent = runTotals.imported + ' imported, ' + modalCompletedCities + '/' + modalTotalCities + ' cities';
+  document.getElementById('miniTitle').textContent = scrapeRunning ? 'Scraping...' : 'Scrape Complete';
+  document.getElementById('miniSpinner').style.display = scrapeRunning ? '' : 'none';
+}
+
+function cancelScrape() {
+  if (!scrapeRunning) return;
+  if (!confirm('Cancel the current scrape? Leads already imported will be kept.')) return;
+  scrapeCancelled = true;
+}
+
+function updateCityStatus(index, status, data) {
+  var iconEl = document.getElementById('city-icon-' + index);
+  var statusEl = document.getElementById('city-status-' + index);
+  var rowEl = document.getElementById('city-' + index);
+
+  if (status === 'scraping') {
+    iconEl.innerHTML = '<span class="spin-icon">&#9881;</span>';
+    iconEl.style.color = 'var(--accent)';
+    statusEl.textContent = 'Scraping...';
+    statusEl.style.color = 'var(--accent)';
+    rowEl.className = 'city-item city-item-active';
+    document.getElementById('modalCurrentCity').style.display = 'block';
+    document.getElementById('modalCurrentCityName').textContent = data.cityName;
+    // Scroll into view
+    rowEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else if (status === 'done') {
+    rowEl.className = 'city-item';
+    iconEl.innerHTML = '&#10003;';
+    iconEl.style.color = 'var(--green)';
+    var txt = data.imported + ' imported';
+    if (data.rejected) txt += ', ' + data.rejected + ' filtered';
+    if (data.duplicates) txt += ', ' + data.duplicates + ' dupes';
+    statusEl.innerHTML = '<span style="color:var(--green);">' + data.total_found + ' found</span> &rarr; ' + txt;
+    statusEl.style.color = '';
+  } else if (status === 'error') {
+    rowEl.className = 'city-item';
+    iconEl.innerHTML = '&#10007;';
+    iconEl.style.color = 'var(--red)';
+    statusEl.textContent = data.error;
+    statusEl.style.color = 'var(--red)';
+  }
+}
+
+function updateModalTotals() {
+  document.getElementById('totalFound').textContent = runTotals.found;
+  document.getElementById('totalImported').textContent = runTotals.imported;
+  document.getElementById('totalFiltered').textContent = runTotals.filtered;
+  document.getElementById('totalDupes').textContent = runTotals.dupes;
+}
+
+function updateModalGrades() {
+  var hasGrades = Object.values(runGrades).some(function(v) { return v > 0; });
+  if (hasGrades) {
+    document.getElementById('modalGrades').style.display = 'block';
+    document.getElementById('gradeA').textContent = runGrades.A;
+    document.getElementById('gradeB').textContent = runGrades.B;
+    document.getElementById('gradeC').textContent = runGrades.C;
+    document.getElementById('gradeD').textContent = runGrades.D;
+    document.getElementById('gradeF').textContent = runGrades.F;
+  }
+}
+
+function updateModalProgress(completed, total) {
+  modalCompletedCities = completed;
+  var pct = Math.round((completed / total) * 100);
+  document.getElementById('modalProgressBar').style.width = pct + '%';
+  document.getElementById('modalProgressText').textContent = completed + ' / ' + total + ' cities (' + pct + '%)';
+  // Also sync mini progress bar
+  syncMiniProgress();
+}
+
+function finishModal(success, wasCancelled) {
+  scrapeRunning = false;
+  document.getElementById('modalCurrentCity').style.display = 'none';
+  document.getElementById('modalDoneActions').style.display = 'block';
+  document.getElementById('modalCancelRow').style.display = 'none';
+  document.getElementById('modalMinimizeBtn').style.display = 'none';
+
+  if (wasCancelled) {
+    document.getElementById('modalIcon').innerHTML = '<span style="font-size:48px;color:var(--orange);">&#9888;</span>';
+    document.getElementById('modalTitle').textContent = 'Scrape Cancelled';
+    document.getElementById('modalSubtitle').textContent = runTotals.imported + ' leads imported before cancellation';
+  } else if (success) {
+    document.getElementById('modalIcon').innerHTML = '<span style="font-size:48px;color:var(--green);">&#10003;</span>';
+    document.getElementById('modalIcon').style.color = '';
+    document.getElementById('modalTitle').textContent = 'Scrape Complete!';
+    document.getElementById('modalSubtitle').textContent = runTotals.imported + ' leads imported across all cities';
+  } else {
+    document.getElementById('modalIcon').innerHTML = '<span style="font-size:48px;color:var(--orange);">&#9888;</span>';
+    document.getElementById('modalTitle').textContent = 'Scrape Finished with Errors';
+  }
+
+  // Update mini bar to show completion
+  syncMiniProgress();
+  // If minimized, update the mini spinner
+  document.getElementById('miniSpinner').style.display = 'none';
+  document.getElementById('miniTitle').textContent = wasCancelled ? 'Cancelled' : 'Complete';
+
+  // Refresh the recent leads table
+  loadRecentLeads();
+}
+
+function closeModal() {
+  document.getElementById('scrapeModal').style.display = 'none';
+  document.getElementById('miniProgress').style.display = 'none';
+}
+
+// ==========================================
+// BATCH SCRAPE (city-by-city with progress)
+// ==========================================
+async function runBatchScrape() {
+  var cities = getSelectedCities();
+  if (cities.length === 0) { alert('Select at least one city.'); return; }
+
+  var mode = document.getElementById('batchMode').value;
+  var query = document.getElementById('batchQuery').value;
+  var maxPerCity = parseInt(document.getElementById('batchMax').value);
+  var campaignId = document.getElementById('batchCampaign').value;
+  var source = document.getElementById('batchSource').value;
+  var maxReviewsVal = document.getElementById('batchMaxReviews').value;
+  var maxReviewCount = maxReviewsVal ? parseInt(maxReviewsVal) : null;
+  var btn = document.getElementById('batchBtn');
+
+  btn.disabled = true;
+  btn.textContent = 'Scraping...';
+
+  var modeLabel = mode === 'waterfall' ? 'Waterfall Scrape' : 'Batch Scrape';
+  var subtitle = query + ' — ' + cities.length + ' cities' + (mode === 'waterfall' ? ' (all 3 sources)' : ' (' + source.replace(/_/g, ' ') + ')');
+  openModal(modeLabel, subtitle, cities);
+
+  for (var i = 0; i < cities.length; i++) {
+    // Check for cancellation
+    if (scrapeCancelled) {
+      // Mark remaining cities as skipped
+      for (var j = i; j < cities.length; j++) {
+        updateCityStatus(j, 'error', { error: 'Cancelled' });
+      }
+      break;
+    }
+
+    updateCityStatus(i, 'scraping', { cityName: query + ' in ' + cities[i] });
+
+    try {
+      var endpoint, bodyData;
+      if (mode === 'waterfall') {
+        endpoint = '/api/scraper/waterfall';
+        bodyData = {
+          campaign_id: campaignId,
+          query: query,
+          location: cities[i],
+          maxResults: maxPerCity,
+        };
+        if (maxReviewCount != null) bodyData.maxReviewCount = maxReviewCount;
+      } else {
+        endpoint = '/api/scraper/run';
+        bodyData = {
+          source: source,
+          campaign_id: campaignId,
+          params: {
+            query: query,
+            location: cities[i],
+            maxResults: maxPerCity,
+          },
+        };
+        if (maxReviewCount != null) bodyData.params.maxReviewCount = maxReviewCount;
+        if (source === 'yelp') bodyData.params.term = query;
+      }
+
+      var res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData),
+      });
+      var data = await res.json();
+
+      if (data.success) {
+        runTotals.found += data.total_found || 0;
+        runTotals.imported += data.imported || 0;
+        runTotals.filtered += data.rejected || 0;
+        runTotals.dupes += data.duplicates || 0;
+
+        // Aggregate grades
+        if (data.grade_distribution) {
+          ['A','B','C','D','F'].forEach(function(g) {
+            runGrades[g] += data.grade_distribution[g] || 0;
+          });
+        }
+
+        updateCityStatus(i, 'done', {
+          total_found: data.total_found || 0,
+          imported: data.imported || 0,
+          rejected: data.rejected || 0,
+          duplicates: data.duplicates || 0,
+        });
+      } else {
+        updateCityStatus(i, 'error', { error: data.error || 'Unknown error' });
+      }
+    } catch (err) {
+      updateCityStatus(i, 'error', { error: err.message });
+    }
+
+    updateModalTotals();
+    updateModalGrades();
+    updateModalProgress(i + 1, cities.length);
+  }
+
+  finishModal(runTotals.imported > 0, scrapeCancelled);
+  btn.disabled = false;
+  btn.textContent = 'Scrape All Selected Cities';
+}
+
+// ==========================================
+// SINGLE CITY SCRAPE
+// ==========================================
+function updateSourceUI() {
+  var source = document.getElementById('scrapeSource').value;
+  document.getElementById('yelpCategories').style.display = source === 'yelp' ? 'block' : 'none';
+}
+
+async function runScrape(e) {
+  e.preventDefault();
+  var btn = document.getElementById('scrapeBtn');
+  var resultEl = document.getElementById('scrapeResult');
+  var source = document.getElementById('scrapeSource').value;
+  var query = document.getElementById('scrapeQuery').value;
+  var location = document.getElementById('scrapeLocation').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Scraping...';
+
+  // Show a mini progress overlay in the results panel
+  resultEl.innerHTML = '<div style="padding:40px;text-align:center;">' +
+    '<div class="spin-icon" style="font-size:32px;margin-bottom:12px;">&#9881;</div>' +
+    '<div style="font-weight:600;color:var(--text);margin-bottom:4px;">Scraping ' + source.replace(/_/g, ' ') + '</div>' +
+    '<div style="color:var(--text-dim);font-size:13px;">' + query + ' in ' + location + '</div>' +
+    '<div style="margin-top:12px;background:var(--modal-card-bg);border-radius:8px;height:6px;overflow:hidden;">' +
+      '<div style="height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--green));animation:pulse 1.5s ease infinite;"></div>' +
+    '</div></div>';
+
+  var singleMaxReviews = document.getElementById('scrapeMaxReviews').value;
+  var params = {
+    query: query,
+    location: location,
+    maxResults: parseInt(document.getElementById('scrapeMax').value),
+  };
+  if (singleMaxReviews) params.maxReviewCount = parseInt(singleMaxReviews);
+
+  if (source === 'yelp') {
+    params.term = params.query;
+    var cats = document.getElementById('scrapeCategories').value;
+    if (cats) params.categories = cats;
+  }
+
+  try {
+    var res = await fetch('/api/scraper/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: source,
+        campaign_id: document.getElementById('scrapeCampaign').value,
+        params: params,
+      }),
+    });
+    var data = await res.json();
+
+    if (data.success) {
+      document.getElementById('resultCount').textContent = data.total_found + ' found, ' + data.imported + ' imported, ' + (data.rejected || 0) + ' filtered';
+
+      var rejHtml = '';
+      if (data.rejected > 0 && data.rejection_reasons) {
+        var rRows = Object.entries(data.rejection_reasons)
+          .sort(function(a,b) { return b[1] - a[1]; })
+          .map(function(e) { return '<div style="display:flex;justify-content:space-between;"><span>' + e[0] + '</span><span>' + e[1] + '</span></div>'; })
+          .join('');
+        rejHtml = '<div style="margin-top:10px;padding:10px;background:var(--warn-bg);border:1px solid var(--orange);border-radius:6px;">' +
+          '<div style="font-weight:600;color:var(--orange);margin-bottom:6px;">Filtered: ' + data.rejected + ' low-quality leads</div>' +
+          '<div style="font-size:12px;color:var(--text-dim);">' + rRows + '</div></div>';
+      }
+
+      var gradeHtml = '';
+      if (data.grade_distribution) {
+        var gColors = { A: 'var(--green)', B: 'var(--accent)', C: 'var(--yellow)', D: 'var(--orange)', F: 'var(--red)' };
+        gradeHtml = '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">';
+        ['A','B','C','D','F'].forEach(function(g) {
+          var count = data.grade_distribution[g] || 0;
+          gradeHtml += '<div style="text-align:center;padding:6px 12px;border-radius:6px;background:var(--modal-card-bg);min-width:40px;">' +
+            '<div style="font-size:16px;font-weight:700;color:' + gColors[g] + ';">' + count + '</div>' +
+            '<div style="font-size:10px;color:var(--text-dim);">Grade ' + g + '</div></div>';
+        });
+        gradeHtml += '</div>';
+      }
+
+      resultEl.innerHTML =
+        '<div style="background:var(--success-bg);border:1px solid var(--success-border);border-radius:8px;padding:16px;">' +
+          '<strong style="color:var(--green);">Scrape Complete!</strong>' +
+          '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">' +
+            '<div>Total Found: <strong>' + data.total_found + '</strong></div>' +
+            '<div style="color:var(--green);">Imported: <strong>' + data.imported + '</strong></div>' +
+            '<div style="color:var(--orange);">Filtered: <strong>' + (data.rejected || 0) + '</strong></div>' +
+            '<div style="color:var(--yellow);">Duplicates: <strong>' + data.duplicates + '</strong></div>' +
+            '<div style="color:var(--text-dim);">No Phone: <strong>' + data.no_phone + '</strong></div>' +
+          '</div>' +
+          gradeHtml +
+          rejHtml +
+        '</div>';
+
+      // Refresh recent leads
+      loadRecentLeads();
+    } else {
+      resultEl.innerHTML = '<div style="background:var(--error-bg);border:1px solid var(--error-border);border-radius:8px;padding:16px;color:var(--red);">' + data.error + '</div>';
+    }
+  } catch (err) {
+    resultEl.innerHTML = '<div style="background:var(--error-bg);border:1px solid var(--error-border);border-radius:8px;padding:16px;color:var(--red);">Error: ' + err.message + '</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Start Scraping';
+}
+
+// ==========================================
+// RECENTLY SCRAPED LEADS (persistent table)
+// ==========================================
+async function loadRecentLeads() {
+  var body = document.getElementById('recentLeadsBody');
+  try {
+    var res = await fetch('/api/leads/recently-scraped?limit=100');
+    var leads = await res.json();
+
+    document.getElementById('recentLeadsCount').textContent = leads.length + ' leads';
+
+    if (leads.length === 0) {
+      body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-dim);">No scraped leads yet. Run a scrape above to get started.</div>';
+      return;
+    }
+
+    var html = '<table class="leads-table"><thead><tr>' +
+      '<th>Grade</th><th>Company</th><th>Phone</th><th>City/State</th>' +
+      '<th>Rating</th><th>Reviews</th><th>Source</th><th>Scraped</th><th></th>' +
+      '</tr></thead><tbody>';
+
+    leads.forEach(function(l) {
+      var grade = l.qualification_grade || '-';
+      var gradeClass = 'grade-' + grade;
+      var rating = l.rating ? (parseFloat(l.rating).toFixed(1) + ' &#9733;') : '-';
+      var reviews = l.review_count || '-';
+      var srcLabel = l.enrichment_sources || l.source || '';
+      var scraped = l.created_at ? timeAgo(l.created_at) : '';
+
+      html += '<tr>' +
+        '<td><span class="grade-badge ' + gradeClass + '">' + grade + '</span></td>' +
+        '<td><a href="/leads/' + l.id + '" style="color:var(--accent);text-decoration:none;">' + escHtml(l.company_name || 'Unknown') + '</a></td>' +
+        '<td>' + escHtml(l.phone || '') + '</td>' +
+        '<td>' + escHtml((l.city || '') + (l.state ? ', ' + l.state : '')) + '</td>' +
+        '<td>' + rating + '</td>' +
+        '<td>' + reviews + '</td>' +
+        '<td style="font-size:11px;color:var(--text-dim);">' + escHtml(srcLabel) + '</td>' +
+        '<td style="font-size:11px;color:var(--text-dim);">' + scraped + '</td>' +
+        '<td><button class="delete-btn" onclick="deleteLead(' + l.id + ', this)" title="Delete">&#128465;</button></td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red);">Error loading leads: ' + e.message + '</div>';
+  }
+}
+
+async function deleteLead(id, btn) {
+  if (!confirm('Delete this lead permanently?')) return;
+  btn.disabled = true;
+  try {
+    await fetch('/api/leads/' + id, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    // Update count
+    var countEl = document.getElementById('recentLeadsCount');
+    var currentRows = document.querySelectorAll('.leads-table tbody tr');
+    countEl.textContent = currentRows.length + ' leads';
+  } catch (e) {
+    alert('Error deleting lead');
+    btn.disabled = false;
+  }
+}
+
+function escHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+  var now = new Date();
+  var then = new Date(dateStr + 'Z');
+  var diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+// ==========================================
+// LOAD PAGE DATA
+// ==========================================
+async function loadScrapePage() {
+  try {
+    var cRes = await fetch('/api/dashboard/campaigns');
+    var campaigns = await cRes.json();
+    ['scrapeCampaign', 'batchCampaign'].forEach(function(id) {
+      var sel = document.getElementById(id);
+      sel.innerHTML = '';
+      campaigns.forEach(function(c) {
+        sel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+      });
+    });
+  } catch(e) {}
+
+  try {
+    var sRes = await fetch('/api/dashboard/settings');
+    var settings = await sRes.json();
+    var apify = settings.find(function(s) { return s.key === 'apify_api_token'; });
+    var yelp = settings.find(function(s) { return s.key === 'yelp_api_key'; });
+
+    var statusHtml = '';
+    statusHtml += '<div style="margin-bottom:4px;">Google Maps (Apify): ' +
+      (apify && apify.value ? '<span style="color:var(--green);">Configured</span>' : '<span style="color:var(--red);">Not set</span> — <a href="/settings" style="color:var(--accent);">Add in Settings</a>') + '</div>';
+    statusHtml += '<div style="margin-bottom:4px;">Yelp Fusion: ' +
+      (yelp && yelp.value ? '<span style="color:var(--green);">Configured</span>' : '<span style="color:var(--red);">Not set</span> — <a href="/settings" style="color:var(--accent);">Add in Settings</a>') + '</div>';
+    statusHtml += '<div>Yellow Pages: <span style="color:var(--green);">No key needed</span></div>';
+    document.getElementById('apiStatus').innerHTML = statusHtml;
+  } catch(e) {}
+
+  // Load recent leads
+  loadRecentLeads();
+}
+
+loadScrapePage();
+</script>
+
+<%- include('partials/footer') %>

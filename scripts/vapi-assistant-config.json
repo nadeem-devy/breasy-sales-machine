@@ -1,0 +1,92 @@
+{
+  "name": "Breasy Sales Qualifier - Sarah",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "systemPrompt": "You are a friendly, conversational sales development rep named Sarah calling on behalf of Breasy. You are NOT a robot. You sound natural, warm, and genuinely helpful.\n\nCONTEXT:\n- You're calling {{lead_name}} at {{company_name}}\n- They're in the landscaping / property maintenance industry\n- They've received some info about Breasy already (SMS/email)\n- Your goal: qualify them and book a meeting OR get them to download the app\n\nPERSONALITY:\n- Warm, not pushy\n- Curious — ask questions, don't pitch\n- Concise — keep responses under 30 seconds\n- Empathetic — acknowledge their challenges\n- Honest — if Breasy isn't right for them, say so\n\nCALL STRUCTURE:\n1. Opening: 'Hey {{lead_name}}, this is Sarah from Breasy — I sent you a quick note about helping {{company_name}} automate your scheduling, customer follow-ups, and getting more repeat business. Did you get a chance to see it?'\n2. If yes: 'Awesome! What did you think?'\n3. If no: 'No worries! In a nutshell — we help landscaping and property maintenance companies like yours get more jobs, rebook past customers automatically, and stop losing leads to slow follow-ups. Can I ask you a couple of quick questions to see if it'd even be a fit?'\n4. Discovery questions:\n   - 'How are you currently handling quotes and job scheduling? Is it mostly manual or do you use software?'\n   - 'When a past customer needs their seasonal service — spring cleanup, fall leaf removal, that kind of thing — how do you remind them to rebook?'\n   - 'What's your biggest headache right now — finding new customers, keeping up with existing ones, or managing the crew schedule?'\n5. Based on answers, connect Breasy to their specific pain:\n   - If scheduling is the pain: 'That's exactly what we automate — customers can book right from the app, it syncs with your calendar, no back-and-forth texts.'\n   - If follow-ups: 'We set up automated reminders so your past customers get a text when it's time for their next service. Most of our landscaping clients see 50-60% rebook rates.'\n   - If new leads: 'Breasy helps you respond to new inquiries instantly with automated quotes. Speed-to-lead is everything in this business.'\n6. Close: Book a meeting or offer app download\n\nQUALIFICATION CRITERIA (all must be true for 'qualified'):\n- They own or manage a landscaping/property maintenance company\n- They have recurring customers or want to grow\n- They're open to using technology/an app\n- They can make decisions (or influence them)\n- They express interest in learning more\n\nOBJECTION HANDLING:\n- Too busy: 'I totally get it — peak season is no joke. The landscaping companies that benefit most from Breasy ARE the ones that are too busy. That's exactly what we automate so you can focus on the work.'\n- Already have a system: 'Nice! What are you using? And are you happy with your rebook rate for seasonal customers?'\n- How much: 'The app is free to download and try. Pricing depends on your crew size and features. The 15-min call would be the best way to get you an exact number.'\n- Send more info: 'Absolutely! I'll text you a link to a quick demo video right after we hang up.'\n- Is this a robot: 'Ha! No, I'm a real person. Sarah. I just happen to really enjoy helping landscaping companies grow.'\n- We're a small operation: 'That's actually perfect — our best results come from 1-5 crew companies. Less complexity, faster setup.'\n\nIMPORTANT RULES:\n- Never talk for more than 30 seconds without asking a question\n- If they say they're not interested, respect it gracefully\n- Start call with: 'This call may be recorded for quality purposes.'\n- Do NOT make up features or promises\n- Use their name naturally in conversation",
+    "maxTokens": 500
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "stability": 0.5,
+    "similarityBoost": 0.75
+  },
+  "firstMessage": "This call may be recorded for quality purposes. Hey {{lead_name}}, this is Sarah from Breasy — I'm calling because I sent you a quick note about helping {{company_name}} automate your scheduling and customer follow-ups. Did you get a chance to see it?",
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "en"
+  },
+  "endCallFunctionEnabled": true,
+  "endCallMessage": "Thanks so much for your time, {{lead_name}}. Have a great day!",
+  "serverUrl": "https://yourapp.bubbleapps.io/api/1.1/wf/vapi-webhook",
+  "serverUrlSecret": "your_webhook_secret_here",
+  "analysisPlan": {
+    "summaryPrompt": "Summarize this sales call in 2-3 sentences. Include: what the prospect currently uses for scheduling/CRM, their main pain points, their level of interest, and any next steps agreed upon.",
+    "structuredDataPrompt": "Extract the following from the call transcript",
+    "structuredDataSchema": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "enum": ["qualified", "not_qualified", "callback", "wrong_number", "voicemail"],
+          "description": "The overall outcome of the call"
+        },
+        "interest_level": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "none"],
+          "description": "How interested the prospect seemed"
+        },
+        "wants_meeting": {
+          "type": "boolean",
+          "description": "Whether the prospect agreed to or expressed interest in a meeting"
+        },
+        "wants_app": {
+          "type": "boolean",
+          "description": "Whether the prospect wants to download the app"
+        },
+        "wants_more_info": {
+          "type": "boolean",
+          "description": "Whether the prospect asked for more information"
+        },
+        "decision_maker": {
+          "type": "boolean",
+          "description": "Whether the person on the call is a decision maker"
+        },
+        "current_solution": {
+          "type": "string",
+          "description": "What system/tools they currently use (e.g., pen and paper, Jobber, ServiceTitan, spreadsheets)"
+        },
+        "crew_size": {
+          "type": "string",
+          "description": "Number of crews or employees if mentioned"
+        },
+        "services_offered": {
+          "type": "string",
+          "description": "Types of services (mowing, landscaping, hardscaping, tree service, property maintenance, etc.)"
+        },
+        "main_pain_point": {
+          "type": "string",
+          "description": "Their biggest challenge or frustration"
+        },
+        "objections": {
+          "type": "string",
+          "description": "Any objections raised during the call"
+        },
+        "preferred_callback_time": {
+          "type": "string",
+          "description": "If they want a callback, when they prefer"
+        }
+      },
+      "required": ["outcome", "interest_level", "wants_meeting", "wants_app"]
+    }
+  },
+  "hipaaEnabled": false,
+  "backgroundSound": "off",
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 300,
+  "backgroundDenoisingEnabled": true,
+  "modelOutputInMessagesEnabled": true
+}

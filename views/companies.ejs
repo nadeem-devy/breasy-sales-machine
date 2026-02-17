@@ -1,0 +1,523 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <h1>Companies</h1>
+  <div class="btn-group">
+    <button class="btn btn-outline btn-sm" onclick="runMatcher()">Auto-Match Leads</button>
+    <button class="btn btn-primary btn-sm" onclick="showCreateModal()">Add Company</button>
+  </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="co-stats-row" id="coStats">
+  <div class="co-stat-card"><div class="co-stat-value" id="s-total">—</div><div class="co-stat-label">Companies</div></div>
+  <div class="co-stat-card"><div class="co-stat-value" id="s-contacts" style="color:var(--accent)">—</div><div class="co-stat-label">Linked Contacts</div></div>
+  <div class="co-stat-card"><div class="co-stat-value" id="s-unmatched" style="color:var(--yellow)">—</div><div class="co-stat-label">Unmatched Leads</div></div>
+  <div class="co-stat-card"><div class="co-stat-value" id="s-with-contacts" style="color:var(--green)">—</div><div class="co-stat-label">With Contacts</div></div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <input type="text" id="searchInput" placeholder="Search company, domain, city..." style="min-width:280px;" onkeyup="debounceSearch()">
+  <select id="industryFilter" onchange="loadCompanies()">
+    <option value="">All Industries</option>
+  </select>
+  <select id="reviewFilter" onchange="loadCompanies()">
+    <option value="">All Reviews</option>
+    <option value="5">5 or less</option>
+    <option value="10">10 or less</option>
+    <option value="25">25 or less</option>
+    <option value="50">50 or less</option>
+    <option value="100">100 or less</option>
+    <option value="0">0 reviews</option>
+  </select>
+  <span id="companyCount" style="color:var(--text-dim);font-size:13px;"></span>
+</div>
+
+<!-- Company List -->
+<div class="co-list" id="companyList">
+  <div style="padding:40px;text-align:center;color:var(--text-dim);">Loading companies...</div>
+</div>
+
+<!-- Pagination -->
+<div style="display:flex;justify-content:center;gap:12px;margin-top:16px;">
+  <button class="btn btn-outline btn-sm" id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+  <span id="pageInfo" style="color:var(--text-dim);font-size:13px;line-height:30px;">Page 1</span>
+  <button class="btn btn-outline btn-sm" id="nextBtn" onclick="changePage(1)">Next</button>
+</div>
+
+<!-- Create Company Modal -->
+<div id="createModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="margin-bottom:16px;color:var(--text);">Add Company</h3>
+    <div class="form-group"><label style="color:var(--text);">Company Name *</label><input type="text" id="c-name" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Domain</label><input type="text" id="c-domain" placeholder="e.g. acme.com" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Website</label><input type="text" id="c-website" placeholder="https://acme.com" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Industry</label><input type="text" id="c-industry" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group"><label style="color:var(--text);">City</label><input type="text" id="c-city" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+      <div class="form-group"><label style="color:var(--text);">State</label><input type="text" id="c-state" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    </div>
+    <div class="form-group"><label style="color:var(--text);">Phone</label><input type="text" id="c-phone" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div class="form-group"><label style="color:var(--text);">Employee Count</label><input type="number" id="c-employees" value="0" style="color:var(--text);background:var(--bg);border:1px solid var(--border);"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="createCompany()">Create</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="hideCreateModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HubSpot-Style Right Sidebar -->
+<div id="companySidebar" class="company-sidebar">
+  <div class="company-sidebar-overlay" onclick="closeCompanySidebar()"></div>
+  <div class="company-sidebar-panel">
+    <div class="company-sidebar-header">
+      <div>
+        <h2 id="sidebarCompanyName" style="margin:0;font-size:18px;color:var(--text);">Loading...</h2>
+        <div id="sidebarCompanyDomain" style="font-size:13px;color:var(--text-dim);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeCompanySidebar()" style="background:none;border:none;font-size:24px;color:var(--text-dim);cursor:pointer;padding:0;line-height:1;">&times;</button>
+    </div>
+
+    <div class="company-sidebar-tabs">
+      <div class="sidebar-tab active" data-tab="overview" onclick="switchCompanyTab('overview')">Overview</div>
+      <div class="sidebar-tab" data-tab="contacts" onclick="switchCompanyTab('contacts')">Contacts</div>
+    </div>
+
+    <div class="company-sidebar-content" id="sidebarCompanyContent">
+      <div class="sidebar-tab-content active" id="tab-co-overview">
+        <div id="sidebarCompanyOverview">Loading...</div>
+      </div>
+      <div class="sidebar-tab-content" id="tab-co-contacts">
+        <!-- Link Contact Section -->
+        <div id="sidebarLinkSection" style="display:none;margin-bottom:20px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <strong style="color:var(--text);font-size:13px;">Link New Contact</strong>
+            <button onclick="hideSidebarLinkContact()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;line-height:1;padding:0;">&times;</button>
+          </div>
+          <input type="text" id="sidebarLeadSearch" placeholder="Search by name, email, or phone..." oninput="sidebarSearchLeads()" style="width:100%;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;margin-bottom:8px;">
+          <div id="sidebarLeadResults" style="max-height:200px;overflow-y:auto;"></div>
+        </div>
+        <div id="sidebarCompanyContacts">Loading...</div>
+      </div>
+    </div>
+
+    <div class="company-sidebar-footer">
+      <button class="btn btn-primary" onclick="openFullCompany()" style="width:100%;">View Full Company</button>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="sidebar-fab" onclick="showSidebarLinkContact()">
+      Add Contact
+    </button>
+  </div>
+</div>
+
+<style>
+  .co-stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px; }
+  .co-stat-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;text-align:center; }
+  .co-stat-value { font-size:28px;font-weight:700;color:var(--text);line-height:1.2; }
+  .co-stat-label { font-size:12px;color:var(--text-dim);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px; }
+
+  .co-list { display:flex;flex-direction:column;gap:6px; }
+
+  .co-card {
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;
+    cursor:pointer;transition:border-color 0.15s,background 0.15s;
+  }
+  .co-card:hover { border-color:var(--blue);background:rgba(59,130,246,0.04); }
+
+  .co-avatar {
+    width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:700;flex-shrink:0;background:rgba(59,130,246,0.12);color:#60a5fa;
+  }
+  .co-info { flex:1;min-width:0; }
+  .co-name { font-weight:600;font-size:14px;color:var(--text); }
+  .co-domain { color:var(--accent);font-size:12px; }
+  .co-detail-row { display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-dim);margin-top:2px; }
+
+  .co-contacts-col {
+    display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;min-width:60px;
+  }
+  .co-contacts-count {
+    font-size:22px;font-weight:700;color:var(--text);
+  }
+  .co-contacts-label { font-size:10px;color:var(--text-dim);text-transform:uppercase; }
+
+  .co-industry-tag {
+    display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
+    background:rgba(59,130,246,0.1);color:var(--accent);
+  }
+
+  @media (max-width:1024px) { .co-stats-row { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:768px) {
+    .co-stats-row { grid-template-columns:repeat(2,1fr); }
+    .co-card { flex-wrap:wrap;gap:10px; }
+  }
+
+  /* HubSpot-Style Sidebar */
+  .company-sidebar { position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.3s ease; }
+  .company-sidebar.open { pointer-events:auto;opacity:1; }
+  .company-sidebar-overlay { position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);cursor:pointer; }
+  .company-sidebar-panel { position:absolute;top:0;right:0;bottom:0;width:480px;max-width:90vw;background:var(--bg-card);border-left:1px solid var(--border);box-shadow:-4px 0 24px rgba(0,0,0,0.3);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.3s ease; }
+  .company-sidebar.open .company-sidebar-panel { transform:translateX(0); }
+  .company-sidebar-header { padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:16px; }
+  .company-sidebar-tabs { display:flex;border-bottom:1px solid var(--border);background:var(--bg); }
+  .sidebar-tab { flex:1;padding:12px 16px;text-align:center;font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s; }
+  .sidebar-tab:hover { color:var(--text);background:var(--bg-hover); }
+  .sidebar-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+  .company-sidebar-content { flex:1;overflow-y:auto;padding:20px 24px; }
+  .sidebar-tab-content { display:none; }
+  .sidebar-tab-content.active { display:block; }
+  .company-sidebar-footer { padding:16px 24px;border-top:1px solid var(--border); }
+  .sidebar-info-table { width:100%;margin-bottom:16px; }
+  .sidebar-info-table td { padding:8px 0;font-size:13px;vertical-align:top; }
+  .sidebar-info-table td:first-child { color:var(--text-dim);width:100px; }
+  .sidebar-info-table td:last-child { font-weight:500;color:var(--text); }
+  .sidebar-contact-item { padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer; }
+  .sidebar-contact-item:hover { background:var(--bg-hover);margin:0 -12px;padding-left:12px;padding-right:12px; }
+  .sidebar-contact-name { font-weight:600;color:var(--text);font-size:13px; }
+  .sidebar-contact-email { font-size:12px;color:var(--text-dim);margin-top:2px; }
+  .sidebar-search-item { padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;border:1px solid var(--border);margin-bottom:4px;background:var(--bg-card); }
+  .sidebar-search-item:hover { background:var(--bg-hover);border-color:var(--accent); }
+  .sidebar-search-item.linked { opacity:0.5;cursor:default; }
+  .sidebar-search-item.linked:hover { background:var(--bg-card);border-color:var(--border); }
+
+  /* Floating Action Button */
+  .sidebar-fab {
+    position: absolute;
+    bottom: 80px;
+    right: 24px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .sidebar-fab:hover {
+    background: #dc2626;
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5), 0 3px 6px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+  .sidebar-fab:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+</style>
+
+<script>
+let currentPage = 1;
+let searchTimeout;
+
+function escapeHtml(text) {
+  const d = document.createElement('div'); d.textContent = text || ''; return d.innerHTML;
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { currentPage = 1; loadCompanies(); }, 300);
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  if (currentPage < 1) currentPage = 1;
+  loadCompanies();
+}
+
+async function loadOverview() {
+  try {
+    const res = await fetch('/api/companies/overview');
+    const o = await res.json();
+    document.getElementById('s-total').textContent = o.total || 0;
+    document.getElementById('s-contacts').textContent = o.total_contacts || 0;
+    document.getElementById('s-unmatched').textContent = o.unmatched || 0;
+    document.getElementById('s-with-contacts').textContent = o.with_contacts || 0;
+  } catch (e) { console.error(e); }
+}
+
+async function loadIndustries() {
+  try {
+    const res = await fetch('/api/companies/industries');
+    const industries = await res.json();
+    const sel = document.getElementById('industryFilter');
+    industries.forEach(i => { sel.innerHTML += '<option value="' + escapeHtml(i) + '">' + escapeHtml(i) + '</option>'; });
+  } catch (e) { /* ignore */ }
+}
+
+async function loadCompanies() {
+  const search = document.getElementById('searchInput').value;
+  const industry = document.getElementById('industryFilter').value;
+  const maxReviews = document.getElementById('reviewFilter').value;
+
+  let url = '/api/companies?page=' + currentPage + '&limit=50';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  if (industry) url += '&industry=' + encodeURIComponent(industry);
+  if (maxReviews) url += '&max_review_count=' + maxReviews;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const container = document.getElementById('companyList');
+
+    document.getElementById('companyCount').textContent = data.total + ' companies';
+    document.getElementById('pageInfo').textContent = 'Page ' + currentPage + ' of ' + (Math.ceil(data.total / 50) || 1);
+    document.getElementById('prevBtn').disabled = currentPage <= 1;
+    document.getElementById('nextBtn').disabled = currentPage * 50 >= data.total;
+
+    const companies = data.companies || [];
+    if (!companies.length) {
+      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim);">No companies found. Import leads or click "Auto-Match Leads" to create companies from existing leads.</div>';
+      return;
+    }
+
+    container.innerHTML = companies.map(c => {
+      const initial = (c.name || '?')[0].toUpperCase();
+      const location = [c.city, c.state].filter(Boolean).join(', ');
+      return '<div class="co-card" onclick="openCompanySidebar(' + c.id + '); event.stopPropagation();">' +
+        '<div class="co-avatar">' + initial + '</div>' +
+        '<div class="co-info">' +
+          '<div class="co-name">' + escapeHtml(c.name) + '</div>' +
+          (c.domain ? '<div class="co-domain">' + escapeHtml(c.domain) + '</div>' : '') +
+          '<div class="co-detail-row">' +
+            (c.industry ? '<span class="co-industry-tag">' + escapeHtml(c.industry) + '</span>' : '') +
+            (location ? '<span>' + escapeHtml(location) + '</span>' : '') +
+            (c.employee_count > 0 ? '<span>' + c.employee_count + ' employees</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="co-contacts-col">' +
+          '<div class="co-contacts-count">' + (c.leads_count || 0) + '</div>' +
+          '<div class="co-contacts-label">Contacts</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) { console.error('Load companies error:', e); }
+}
+
+async function runMatcher() {
+  if (!confirm('Run auto-matcher? This will scan all unmatched leads and associate them with companies based on email domain and website domain.')) return;
+  try {
+    const res = await fetch('/api/companies/run-matcher', { method: 'POST' });
+    const data = await res.json();
+    alert('Matching complete!\n\nProcessed: ' + data.total_processed + '\nMatched: ' + data.matched + '\nNew companies: ' + data.new_companies + '\nSkipped: ' + data.skipped);
+    loadOverview();
+    loadCompanies();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function showCreateModal() {
+  document.getElementById('createModal').style.display = 'flex';
+}
+function hideCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
+}
+
+async function createCompany() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) return alert('Company name is required');
+
+  const data = {
+    name,
+    domain: document.getElementById('c-domain').value.trim(),
+    website: document.getElementById('c-website').value.trim(),
+    industry: document.getElementById('c-industry').value.trim(),
+    city: document.getElementById('c-city').value.trim(),
+    state: document.getElementById('c-state').value.trim(),
+    phone: document.getElementById('c-phone').value.trim(),
+    employee_count: parseInt(document.getElementById('c-employees').value) || 0,
+  };
+
+  try {
+    const res = await fetch('/api/companies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      hideCreateModal();
+      loadOverview();
+      loadCompanies();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Unknown'));
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ========== HubSpot-Style Company Sidebar ==========
+
+let currentCompanyId = null;
+
+function openCompanySidebar(companyId) {
+  currentCompanyId = companyId;
+  document.getElementById('companySidebar').classList.add('open');
+  loadCompanySidebarData(companyId);
+}
+
+function closeCompanySidebar() {
+  document.getElementById('companySidebar').classList.remove('open');
+  currentCompanyId = null;
+}
+
+function switchCompanyTab(tab) {
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.sidebar-tab[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.sidebar-tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-co-' + tab).classList.add('active');
+}
+
+function openFullCompany() {
+  if (currentCompanyId) window.location = '/company/' + currentCompanyId;
+}
+
+let sidebarCompanyContacts = [];
+
+async function loadCompanySidebarData(companyId) {
+  try {
+    const res = await fetch('/api/companies/' + companyId);
+    const data = await res.json();
+    const c = data.company;
+    const contacts = data.contacts || [];
+    sidebarCompanyContacts = contacts;
+
+    document.getElementById('sidebarCompanyName').textContent = c.name;
+    document.getElementById('sidebarCompanyDomain').textContent = c.domain || '';
+
+    // Overview tab
+    document.getElementById('sidebarCompanyOverview').innerHTML =
+      '<table class="sidebar-info-table">' +
+        '<tr><td>Domain</td><td><strong>' + escapeHtml(c.domain || '—') + '</strong></td></tr>' +
+        '<tr><td>Website</td><td>' + (c.website ? '<a href="' + escapeHtml(c.website) + '" target="_blank" style="color:var(--accent);">' + escapeHtml(c.website) + '</a>' : '—') + '</td></tr>' +
+        '<tr><td>Phone</td><td>' + (c.phone ? '<a href="tel:' + escapeHtml(c.phone) + '" style="color:var(--accent);">' + escapeHtml(c.phone) + '</a>' : '—') + '</td></tr>' +
+        '<tr><td>Industry</td><td>' + escapeHtml(c.industry || '—') + '</td></tr>' +
+        '<tr><td>Location</td><td>' + escapeHtml([c.city, c.state].filter(Boolean).join(', ') || '—') + '</td></tr>' +
+        '<tr><td>Employees</td><td>' + (c.employee_count || '—') + '</td></tr>' +
+        '<tr><td>Rating</td><td>' + (c.rating ? c.rating + ' (' + (c.review_count || 0) + ' reviews)' : '—') + '</td></tr>' +
+        '<tr><td>Contacts</td><td><strong>' + (c.leads_count || 0) + '</strong></td></tr>' +
+      '</table>';
+
+    // Contacts tab
+    renderSidebarContacts();
+  } catch (e) { console.error('Load company sidebar error:', e); }
+}
+
+function renderSidebarContacts() {
+  if (!sidebarCompanyContacts.length) {
+    document.getElementById('sidebarCompanyContacts').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:40px 0;">No contacts linked. Click "Link Contact" above to add one.</div>';
+  } else {
+    document.getElementById('sidebarCompanyContacts').innerHTML = sidebarCompanyContacts.map(l => {
+      const name = [l.first_name, l.last_name].filter(Boolean).join(' ') || 'Unknown';
+      return '<div class="sidebar-contact-item" style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="flex:1;min-width:0;" onclick="window.location=\'/lead/' + l.id + '\'">' +
+          '<div class="sidebar-contact-name">' + escapeHtml(name) + '</div>' +
+          '<div class="sidebar-contact-email">' + escapeHtml(l.email || l.phone || '—') + '</div>' +
+        '</div>' +
+        '<button onclick="event.stopPropagation();sidebarUnlinkContact(' + l.id + ');" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;flex-shrink:0;">Unlink</button>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+function showSidebarLinkContact() {
+  document.getElementById('sidebarLinkSection').style.display = 'block';
+  document.getElementById('sidebarLeadSearch').value = '';
+  document.getElementById('sidebarLeadResults').innerHTML = '';
+  document.getElementById('sidebarLeadSearch').focus();
+  switchCompanyTab('contacts');
+}
+
+function hideSidebarLinkContact() {
+  document.getElementById('sidebarLinkSection').style.display = 'none';
+  document.getElementById('sidebarLeadSearch').value = '';
+  document.getElementById('sidebarLeadResults').innerHTML = '';
+}
+
+let sidebarSearchTimer;
+async function sidebarSearchLeads() {
+  clearTimeout(sidebarSearchTimer);
+  sidebarSearchTimer = setTimeout(async () => {
+    const q = document.getElementById('sidebarLeadSearch').value.trim();
+    if (q.length < 2) {
+      document.getElementById('sidebarLeadResults').innerHTML = '';
+      return;
+    }
+    try {
+      const res = await fetch('/api/leads?search=' + encodeURIComponent(q) + '&limit=10');
+      const data = await res.json();
+      const container = document.getElementById('sidebarLeadResults');
+      if (!data.leads || !data.leads.length) {
+        container.innerHTML = '<div style="padding:10px;color:var(--text-dim);font-size:12px;">No leads found</div>';
+        return;
+      }
+      container.innerHTML = data.leads.map(l => {
+        const name = [l.first_name, l.last_name].filter(Boolean).join(' ') || 'Unknown';
+        const alreadyLinked = l.company_id === currentCompanyId;
+        const linkedClass = alreadyLinked ? ' linked' : '';
+        return '<div class="sidebar-search-item' + linkedClass + '" onclick="' + (alreadyLinked ? '' : 'sidebarLinkContact(' + l.id + ')') + '">' +
+          '<strong>' + escapeHtml(name) + '</strong>' +
+          (l.email ? ' &middot; ' + escapeHtml(l.email) : '') +
+          (l.phone ? ' &middot; ' + escapeHtml(l.phone) : '') +
+          (alreadyLinked ? ' <span style="color:var(--green);font-size:11px;">(✓ linked)</span>' : '') +
+        '</div>';
+      }).join('');
+    } catch (e) { console.error(e); }
+  }, 300);
+}
+
+async function sidebarLinkContact(leadId) {
+  if (!currentCompanyId) return;
+  try {
+    const res = await fetch('/api/companies/' + currentCompanyId + '/add-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId }),
+    });
+    if (res.ok) {
+      hideSidebarLinkContact();
+      await loadCompanySidebarData(currentCompanyId);
+    } else {
+      alert('Error linking contact');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function sidebarUnlinkContact(leadId) {
+  if (!currentCompanyId) return;
+  if (!confirm('Unlink this contact from the company?')) return;
+  try {
+    const res = await fetch('/api/companies/' + currentCompanyId + '/remove-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId }),
+    });
+    if (res.ok) {
+      await loadCompanySidebarData(currentCompanyId);
+    } else {
+      alert('Error unlinking contact');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('companySidebar').classList.contains('open')) {
+    closeCompanySidebar();
+  }
+});
+
+loadOverview();
+loadIndustries();
+loadCompanies();
+</script>
+
+<%- include('partials/footer') %>
