@@ -323,10 +323,11 @@ router.post('/voice/inbound', (req, res) => {
       ? `Incoming call from ${lead.first_name || 'a lead'}${lead.company_name ? ' at ' + lead.company_name : ''}.`
       : 'Incoming call from an unknown number.';
 
-    // Ring the browser client first; fall back to operator phone
+    // Ring browser client first, then fall back to operator phone, then Vapi inbound
+    const fallbackAction = `${config.baseUrl}/webhooks/twilio/voice/inbound-fallback`;
     const twiml = `<Response>
   <Say voice="alice">${sayText}</Say>
-  <Dial timeout="20" action="${config.baseUrl}/webhooks/twilio/voice/status" method="POST">
+  <Dial timeout="20" action="${fallbackAction}" method="POST">
     <Client>breasy-operator</Client>
   </Dial>
 </Response>`;
@@ -334,6 +335,47 @@ router.post('/voice/inbound', (req, res) => {
   } catch (err) {
     console.error('[TWILIO-WH] Inbound voice error:', err.message);
     res.type('text/xml').send('<Response><Say>An error occurred. Please try again later.</Say><Hangup/></Response>');
+  }
+});
+
+/**
+ * Inbound fallback — browser didn't answer, try operator phone then Vapi
+ */
+router.post('/voice/inbound-fallback', (req, res) => {
+  try {
+    const { DialCallStatus } = req.body;
+    console.log(`[TWILIO-WH] Inbound fallback — browser status: ${DialCallStatus}`);
+
+    if (DialCallStatus === 'completed') {
+      // Browser answered and call finished normally
+      res.type('text/xml').send('<Response></Response>');
+      return;
+    }
+
+    // Browser didn't answer — try operator phone
+    const operatorPhone = config.admin.operatorPhone || config.admin.phone;
+    if (operatorPhone) {
+      console.log(`[TWILIO-WH] Forwarding to operator phone: ${operatorPhone}`);
+      const twiml = `<Response>
+  <Say voice="alice">Connecting to operator.</Say>
+  <Dial timeout="25" action="${config.baseUrl}/webhooks/twilio/voice/status" method="POST">
+    <Number>${operatorPhone}</Number>
+  </Dial>
+</Response>`;
+      res.type('text/xml').send(twiml);
+      return;
+    }
+
+    // No operator phone — send to voicemail
+    console.log(`[TWILIO-WH] No operator phone, sending to voicemail`);
+    const twiml = `<Response>
+  <Say voice="alice">Sorry, no one is available right now. Please leave a message after the beep, or try again later.</Say>
+  <Record maxLength="120" action="${config.baseUrl}/webhooks/twilio/voice/status" method="POST" />
+</Response>`;
+    res.type('text/xml').send(twiml);
+  } catch (err) {
+    console.error('[TWILIO-WH] Inbound fallback error:', err.message);
+    res.type('text/xml').send('<Response><Say>An error occurred.</Say><Hangup/></Response>');
   }
 });
 
