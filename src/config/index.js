@@ -35,9 +35,12 @@ module.exports = {
     apiKey: process.env.VAPI_API_KEY,
     phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID,
     assistantId: process.env.VAPI_ASSISTANT_ID,
-    inboundAssistantId: process.env.VAPI_INBOUND_ASSISTANT_ID,
-    transferNumber: process.env.VAPI_TRANSFER_NUMBER || '+15102201987',
+    inboundAssistantId: process.env.VAPI_INBOUND_ASSISTANT_ID || 'a691bebb-3ca2-44bb-ac3a-3161a7c877cf',
     webhookUrl: process.env.VAPI_WEBHOOK_URL,
+    routing: {
+      '+13104006987': { name: 'Market Manager', role: 'Existing jobs, job status, technician issues, appointment follow-ups' },
+      '+16025620531': { name: 'Marie (Field Team)', role: 'Platform support, joining as provider, new customers, lead follow-ups' },
+    },
   },
 
   hubspot: {

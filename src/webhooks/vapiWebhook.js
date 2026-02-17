@@ -344,18 +344,16 @@ function handleFunctionCall(payload, res) {
   const fnName = functionCall?.name || 'unknown';
   const call = payload.message?.call || payload.call || {};
   const callerNumber = call.customer?.number || 'unknown';
+  const config = require('../config');
 
   console.log(`[VAPI-WH] Function call: ${fnName} (caller: ${callerNumber})`);
 
   if (fnName === 'transferCall') {
     const destNumber = functionCall?.parameters?.destination || functionCall?.parameters?.number || '';
-    const transferMap = {
-      '+13104006987': 'Market Manager',
-      '+16025620531': 'Marie (Field Team)',
-      '+15102201987': 'David',
-    };
-    const destination = transferMap[destNumber] || destNumber || 'Unknown';
-    console.log(`[VAPI-WH] Transferring call from ${callerNumber} to ${destination} (${destNumber})`);
+    const routingEntry = config.vapi.routing[destNumber];
+    const destination = routingEntry ? routingEntry.name : (destNumber || 'Unknown');
+    const routingRole = routingEntry ? routingEntry.role : '';
+    console.log(`[VAPI-WH] Transferring call from ${callerNumber} to ${destination} (${destNumber})${routingRole ? ' — ' + routingRole : ''}`);
 
     // Try to find the lead by caller phone
     const lead = callerNumber !== 'unknown' ? Lead.findByPhone(callerNumber) : null;
@@ -370,6 +368,7 @@ function handleFunctionCall(payload, res) {
         caller_number: callerNumber,
         transfer_to: destination,
         transfer_number: destNumber,
+        transfer_role: routingRole,
         call_id: call.id,
       },
     });
