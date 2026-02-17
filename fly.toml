@@ -1,0 +1,25 @@
+app = 'breasy-sales-machine'
+primary_region = 'ewr'
+
+[build]
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '3000'
+  DATA_DIR = '/data'
+
+[mounts]
+  source = 'breasy_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

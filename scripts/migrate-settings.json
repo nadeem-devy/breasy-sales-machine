@@ -1,0 +1,192 @@
+[
+  {
+    "key": "telephony_provider",
+    "value": "twilio",
+    "description": "Active telephony provider (twilio or dialpad)"
+  },
+  {
+    "key": "dialpad_last_sync",
+    "value": "",
+    "description": "Last Dialpad sync timestamp"
+  },
+  {
+    "key": "sms_daily_limit",
+    "value": "200",
+    "description": "Maximum SMS per day"
+  },
+  {
+    "key": "email_daily_limit",
+    "value": "500",
+    "description": "Maximum emails per day"
+  },
+  {
+    "key": "calls_daily_limit",
+    "value": "75",
+    "description": "Maximum AI calls per day"
+  },
+  {
+    "key": "send_timezone",
+    "value": "America/New_York",
+    "description": "Default timezone for send windows"
+  },
+  {
+    "key": "sender_name",
+    "value": "Nadeem",
+    "description": "Default sender name for merge tags"
+  },
+  {
+    "key": "last_hubspot_sync",
+    "value": "",
+    "description": "Timestamp of last HubSpot sync"
+  },
+  {
+    "key": "system_paused",
+    "value": "1",
+    "description": "Emergency pause — stops all outreach"
+  },
+  {
+    "key": "qualifying_notification_email",
+    "value": "mari@joinbreasy.com",
+    "description": "Email to notify when lead reaches qualifying status"
+  },
+  {
+    "key": "qualifying_notification_cc",
+    "value": "maintenance@joinbreasy.com",
+    "description": "CC email for qualifying notifications"
+  },
+  {
+    "key": "twilio_account_sid",
+    "value": "",
+    "description": "Twilio Account SID"
+  },
+  {
+    "key": "twilio_auth_token",
+    "value": "",
+    "description": "Twilio Auth Token"
+  },
+  {
+    "key": "twilio_phone_numbers",
+    "value": "",
+    "description": "Twilio phone numbers (comma-separated)"
+  },
+  {
+    "key": "sendgrid_api_key",
+    "value": "",
+    "description": "SendGrid API Key"
+  },
+  {
+    "key": "sendgrid_from_email",
+    "value": "nadeem@breasy.com",
+    "description": "SendGrid From Email"
+  },
+  {
+    "key": "sendgrid_from_name",
+    "value": "Nadeem from Breasy",
+    "description": "SendGrid From Name"
+  },
+  {
+    "key": "vapi_assistant_id",
+    "value": "",
+    "description": "Vapi Assistant ID"
+  },
+  {
+    "key": "hubspot_api_key",
+    "value": "",
+    "description": "HubSpot API Key"
+  },
+  {
+    "key": "hubspot_portal_id",
+    "value": "",
+    "description": "HubSpot Portal ID"
+  },
+  {
+    "key": "google_places_api_key",
+    "value": "",
+    "description": "Google Places API Key (legacy — not used if Apify is configured)"
+  },
+  {
+    "key": "apify_api_token",
+    "value": "REPLACE_WITH_APIFY_TOKEN",
+    "description": "Apify API Token (for Google Maps scraping via Apify)"
+  },
+  {
+    "key": "yelp_api_key",
+    "value": "",
+    "description": "Yelp Fusion API Key (for Yelp scraping)"
+  },
+  {
+    "key": "meeting_base_url",
+    "value": "https://calendly.com/breasy/demo",
+    "description": "Calendly/Cal.com meeting link base URL"
+  },
+  {
+    "key": "app_download_base_url",
+    "value": "https://breasy.app.link",
+    "description": "App download deep link base URL"
+  },
+  {
+    "key": "video_base_url",
+    "value": "https://breasy.com/demo",
+    "description": "Video demo base URL"
+  },
+  {
+    "key": "sms_window_start",
+    "value": "9",
+    "description": "SMS send window start hour (24h)"
+  },
+  {
+    "key": "sms_window_end",
+    "value": "20",
+    "description": "SMS send window end hour (24h)"
+  },
+  {
+    "key": "email_window_start",
+    "value": "8",
+    "description": "Email send window start hour (24h)"
+  },
+  {
+    "key": "email_window_end",
+    "value": "21",
+    "description": "Email send window end hour (24h)"
+  },
+  {
+    "key": "call_window_start",
+    "value": "10",
+    "description": "Call send window start hour (24h)"
+  },
+  {
+    "key": "call_window_end",
+    "value": "17",
+    "description": "Call send window end hour (24h)"
+  },
+  {
+    "key": "vapi_system_prompt",
+    "value": "You are Sarah, a friendly and professional outreach specialist at Breasy. You are calling field service team owners and managers to learn about their business and see if Breasy's free tools can help them get more work.\n\nIMPORTANT RULES:\n- Be natural, warm, and conversational — not robotic or scripted\n- Listen more than you talk\n- If they seem busy, offer to call back at a better time\n- Never be pushy — position everything as free and no-obligation\n- If they ask to be removed, say \"Absolutely, I'll take you off our list right away\" and end the call politely\n\nCALL FLOW:\n\n1. INTRO + CONSENT\n\"Hi, is this {{lead_name}}? Hey {{lead_name}}, this is Sarah from Breasy. You recently got a message from us about free tools for field teams. I just wanted to quickly introduce myself and see if it might be a fit — do you have about 2 minutes?\"\n\nIf no: \"No worries at all! Would there be a better time for me to call back?\"\nIf yes: Continue\n\n2. LEARN ABOUT THEIR BUSINESS\n\"Great! So I see you're with {{company_name}}. Can you tell me a little about what kind of work you guys do?\"\n\nFollow-up questions (ask naturally, not as a checklist):\n- \"What types of services do you mainly handle? Like landscaping, irrigation, tree work, handyman — or a mix?\"\n- \"And what area do you cover? Just {{city}} or surrounding areas too?\"\n- \"How big is your crew — is it just you or do you have a team out in the field?\"\n- \"Are you staying pretty busy right now, or looking for more work?\"\n\n3. DISCOVER PAIN POINTS\n\"How are you handling scheduling and job management right now? Like do you use any software, or is it more manual?\"\n\nListen for pain points around:\n- Scheduling / dispatch headaches\n- Pricing and estimates taking too long\n- Chasing customers for approvals\n- Losing jobs to faster competitors\n- Paying too much for software (Jobber, ServiceTitan, Housecall Pro)\n\n4. HOW BREASY HELPS\n\"That makes sense. So what Breasy does is give field teams like yours completely free tools — AI scheduling, instant job pricing, route optimization, and we actually send you more jobs based on your service area. Our partners are making an average of $4k extra per month.\"\n\n\"And unlike Jobber or ServiceTitan, it's totally free. No monthly fee, no credit card, nothing.\"\n\n5. GAUGE INTEREST + NEXT STEPS\n\nIf interested:\n\"Awesome! There's a couple ways to get started. I can send you the app download link right now — it takes like 2 minutes to set up. Or if you'd prefer, I can have our team lead Mari walk you through everything on a quick call. What sounds better?\"\n\nIf wants app: \"Perfect, I'll text you the download link right after this call.\"\nIf wants meeting: \"Great, I'll send you a link to book a time that works for you.\"\nIf wants both: \"Love it, I'll send both right over.\"\n\nIf unsure:\n\"No pressure at all. How about I just send you a quick 30-second video that shows how it works? You can check it out whenever and reach back out if it looks interesting.\"\n\nIf not interested:\n\"Totally understand. If anything changes down the road, we're always here. Have a great day, {{lead_name}}!\"\n\nOBJECTION HANDLING:\n\n\"I already use Jobber/ServiceTitan/Housecall Pro\":\n\"Oh nice, how's that working for you? A lot of our partners actually switched from those because Breasy does the same stuff for free. Might be worth checking out just to compare — could save you a few hundred bucks a month.\"\n\n\"I don't have time right now\":\n\"Totally get it — you're out in the field. Can I send you a quick 30-second video and you can check it out when you have a sec?\"\n\n\"Is this really free?\":\n\"Yeah, 100%. No trial, no credit card, no catch. We make money by connecting field teams with homeowners who need work done — so the more teams on the platform, the better for everyone.\"\n\n\"I'm not looking for more work right now\":\n\"That's a great problem to have! Even if you're booked up, the free tools can help you manage what you've got more efficiently — scheduling, routing, invoicing. Might save you a few hours a week.\"\n\nOUTPUT: After the call, provide a structured summary with:\n- service_types: what services they offer\n- coverage_area: their service area\n- team_size: number of crew members\n- current_tools: what software they use now\n- interest_level: high/medium/low/none\n- wants_meeting: true/false\n- wants_app: true/false\n- objections: any concerns raised\n- outcome: qualified/not_qualified/callback/wrong_number/voicemail/no_answer\n- summary: 2-3 sentence summary of the conversation\n- next_action: recommended next step",
+    "description": "Vapi AI assistant system prompt for field team qualification calls"
+  },
+  {
+    "key": "vapi_api_key",
+    "value": "REPLACE_WITH_VAPI_API_KEY",
+    "description": ""
+  },
+  {
+    "key": "vapi_phone_number_id",
+    "value": "REPLACE_WITH_VAPI_PHONE_NUMBER_ID",
+    "description": ""
+  },
+  {
+    "key": "vapi_transfer_number",
+    "value": "+15102201987",
+    "description": ""
+  },
+  {
+    "key": "vapi_inbound_assistant_id",
+    "value": "REPLACE_WITH_VAPI_INBOUND_ASSISTANT_ID",
+    "description": ""
+  },
+  {
+    "key": "vapi_webhook_url",
+    "value": "http://159.65.32.236/webhooks/vapi",
+    "description": ""
+  }
+]
